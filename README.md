@@ -4,6 +4,20 @@
 
 This is a monorepository project to store all projects within the Cybathlon 2020 project.
 
+To avoid having cross-platform code-base create a folder for each project in root directory.
+
+### SSH keys
+
+For fluently committing to repository ssh-keys are very usefull.
+You can configure git repository to use ssh-keys so you don't have to reenter your passwords over and over.
+
+IF an ssh-key is generated, add them to 
+https://github.com/settings/keys
+
+Otherwise you will need to generate one.
+I should try really hard to post instructions equally good as github help-page. 
+Try to follow [instructions here](https://help.github.com/en/github/authenticating-to-github/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent) 
+  
 
 ### Using git and the repository
 
