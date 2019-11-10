@@ -24,9 +24,8 @@ def fourier_transform(signal):
 
 
 def avg_band_amplitude(frequencies, lower_limit, upper_limit):
-    frequency_band = np.logical_and(frequencies >= lower_limit, frequencies <= upper_limit)
-    np.mean(np.absolute(frequency_band))
-    return 0
+    frequency_band = frequencies[(frequencies >= lower_limit) * (frequencies <= upper_limit)]
+    return np.mean(np.absolute(frequency_band))
 
 
 def extract_amplitudes():
@@ -36,3 +35,14 @@ def extract_amplitudes():
     for wave, band_range in brain_freq_bands.items():
         amplitudes.append(avg_band_amplitude(frequency_spectrum, band_range[0], band_range[1]))
     return amplitudes
+
+
+def main():
+    arr = np.array(range(-10, -20))
+    frequs = (arr[(arr > 11) * (arr < 18)])
+    print(np.mean(np.absolute(frequs)))
+    # print(np.logical_and(arr[arr >= 12], arr[arr <= 18]))
+
+
+if __name__ == "__main__":
+    main()
