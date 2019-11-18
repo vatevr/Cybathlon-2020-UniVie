@@ -1,6 +1,7 @@
-import matplotlib as plt
 import numpy as np
 
+# https://docs.scipy.org/doc/numpy/reference/generated/numpy.hanning.html
+# https://docs.scipy.org/doc/scipy/reference/tutorial/fftpack.html
 brain_freq_bands = {'all': (1, 45),
                     'delta': (1, 4),
                     'theta': (4, 8),
@@ -9,18 +10,16 @@ brain_freq_bands = {'all': (1, 45),
                     'gamma': (30, 45)
                     }
 
-time = np.linspace(0, 0.5, 500)
-input_signal = np.sin(40 * 2 * np.pi * time) + 0.5 * np.sin(90 * 2 * np.pi * time)
+WINDOW_SIZE = 12
+WINDOW_FUNCTION = np.hanning(WINDOW_SIZE)
 
 
-# create a matrix from this
-
-def apply_window_function(signal):
-    return 0
+def apply_window_function(signal, window_function):
+    return signal * window_function
 
 
-def fourier_transform(signal):
-    return np.fft.fft(signal)
+def fourier_transform(windowed_signal):
+    return np.fft.fft(windowed_signal)
 
 
 def avg_band_amplitude(frequencies, lower_limit, upper_limit):
@@ -28,7 +27,7 @@ def avg_band_amplitude(frequencies, lower_limit, upper_limit):
     return np.mean(np.absolute(frequency_band))
 
 
-def extract_amplitudes():
+def extract_amplitudes(input_signal):
     windowed_signal = apply_window_function(input_signal)
     frequency_spectrum = fourier_transform(windowed_signal)
     amplitudes = []
@@ -37,12 +36,13 @@ def extract_amplitudes():
     return amplitudes
 
 
+'''
 def main():
-    arr = np.array(range(-10, -20))
-    frequs = (arr[(arr > 11) * (arr < 18)])
-    print(np.mean(np.absolute(frequs)))
-    # print(np.logical_and(arr[arr >= 12], arr[arr <= 18]))
+    time = np.linspace(0, 0.5, 500)
+    input_signal = np.sin(40 * 2 * np.pi * time) + 0.5 * np.sin(90 * 2 * np.pi * time)
+    extract_amplitudes(input_signal)
 
 
 if __name__ == "__main__":
     main()
+'''
