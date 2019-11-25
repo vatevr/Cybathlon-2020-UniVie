@@ -28,7 +28,7 @@ def avg_band_amplitude(frequencies, lower_limit, upper_limit):
 
 
 def extract_amplitudes(input_signal):
-    windowed_signal = apply_window_function(input_signal)
+    windowed_signal = apply_window_function(input_signal, WINDOW_FUNCTION)
     frequency_spectrum = fourier_transform(windowed_signal)
     amplitudes = []
     for wave, band_range in brain_freq_bands.items():
