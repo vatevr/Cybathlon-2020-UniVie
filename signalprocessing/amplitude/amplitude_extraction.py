@@ -13,7 +13,7 @@ brain_freq_bands = {
                     'gamma': (30, 45)
                     }
 
-WINDOW_SIZE = 2.
+WINDOW_SIZE = 1.
 SAMPLING_RATE = 500
 FREQ_RESOLUTION = 1. / WINDOW_SIZE
 WINDOW_FUNCTION = scipy.signal.hann(M=int(WINDOW_SIZE * SAMPLING_RATE), sym=False)
@@ -25,7 +25,7 @@ def apply_window_function(signal, window_function):
 
 
 def fourier_transform(windowed_signal):
-    return np.fft.fft(windowed_signal)
+    return 10*np.log10(np.fft.fft(windowed_signal))
 
 
 def avg_band_amplitude(spectrum, lower_limit, upper_limit):
@@ -50,7 +50,7 @@ def extract_amplitudes(input_signal):
 def main():
     raw = mne.io.read_raw_brainvision('../data/20191104_Cybathlon_Test_1.vhdr')
     # loads data from 0 to 1 sec
-    t_idx = raw.time_as_index([0., 2.])
+    t_idx = raw.time_as_index([100., 300.])
     data, times = raw[:, t_idx[0]:t_idx[1]]
     plt.plot(extract_amplitudes(data))
     plt.show()
