@@ -30,7 +30,7 @@ class PeakFrequency:
 
     def do(self, x):
         x = np.asarray(x)
-        if x.shape[0] is not self.samples and x.shape[1] is not self.channels:
+        if x.shape[0] != self.samples and x.shape[1] != self.channels:
             raise ValueError("configs (", self.channels, ",", self.samples, ") do not match input dims ", x.shape)
         if np.iscomplexobj(x):
             raise ValueError("x is not a real signal.")
@@ -38,8 +38,8 @@ class PeakFrequency:
         instant_frequency = dict()
         for band in self.bands:
             signal = np.zeros((self.samples, self.channels), dtype=complex)
-            from_val = self.bands[band][0]
-            to_val = self.bands[band][1]
+            from_val = self.samples // self.fs * self.bands[band][0]
+            to_val = self.samples // self.fs * self.bands[band][1]
             signal[from_val:to_val, :] = H[from_val:to_val, :]
             signal = signal.T.dot(self.idft).T
             inst_phase = np.unwrap(np.angle(signal))
