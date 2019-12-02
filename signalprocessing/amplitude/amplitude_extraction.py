@@ -23,23 +23,23 @@ def apply_window_function(signal, window_function):
     return signal * window_function
 
 
-def fourier_transform(windowed_signal):
-    return 10 * np.log10(np.fft.fft(windowed_signal))
+def frequency_spectrum(windowed_signal):
+    return 10 * np.log10(np.absolute(np.fft.fft(windowed_signal)))
 
 
 # pass whole spectrum for all channels to this function
 def avg_band_amplitude(spectrum, lower_limit, upper_limit):
     frequency_band = spectrum[int(lower_limit / FREQ_RESOLUTION):int(upper_limit / FREQ_RESOLUTION)]
-    return np.mean(np.absolute(frequency_band))
+    return np.mean(frequency_band)
 
 
 def extract_amplitudes(input_signal):
     windowed_signal = apply_window_function(input_signal, WINDOW_FUNCTION)
-    frequency_spectrum = fourier_transform(windowed_signal).T
-    plt.plot(np.absolute(frequency_spectrum))
+    spectrum = frequency_spectrum(windowed_signal)
+    plt.plot(np.absolute(spectrum))
     plt.show()
     amplitudes_all_channels = []
-    for channel in frequency_spectrum[0:1]:
+    for channel in spectrum[0:1]:
         amplitudes = []
         for wave, band_range in brain_freq_bands.items():
             amplitudes.append(avg_band_amplitude(channel, band_range[0], band_range[1]))
