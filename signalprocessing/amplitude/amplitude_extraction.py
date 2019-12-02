@@ -1,11 +1,10 @@
 import numpy as np
 import sys
+from topomap_plot import plot_single_topomap
 import time
 import scipy.signal
 import mne
 
-# https://docs.scipy.org/doc/numpy/reference/generated/numpy.hanning.html
-# https://docs.scipy.org/doc/scipy/reference/tutorial/fftpack.html
 brain_freq_bands = {
     'delta': (1, 4),
     'theta': (4, 8),
@@ -44,6 +43,7 @@ def extract_amplitudes(input_signal):
 
 
 def main():
+    #print("the script has the name %s" % (sys.argv[1]))
     raw = mne.io.read_raw_brainvision('../data/20191104_Cybathlon_Test_1.vhdr')
     # loads data from 0 to 1 sec
     t_idx = raw.time_as_index([100., 110.])
@@ -51,9 +51,9 @@ def main():
     start = time.time()
     amplitudes = extract_amplitudes(data)
     end = time.time()
+    plot_single_topomap(amplitudes[2])
     print("elapsed time:", end - start)
     print(amplitudes)
 
-
-if __name__ == "__main__":
-    main()
+    if __name__ == "__main__":
+        main()
