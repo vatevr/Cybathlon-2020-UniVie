@@ -1,4 +1,6 @@
 import numpy as np
+import sys
+import time
 import scipy.signal
 import mne
 import matplotlib.pyplot as plt
@@ -36,8 +38,6 @@ def avg_band_amplitude(spectrum, lower_limit, upper_limit):
 def extract_amplitudes(input_signal):
     windowed_signal = apply_window_function(input_signal, WINDOW_FUNCTION)
     spectrum = frequency_spectrum(windowed_signal)
-    plt.plot(spectrum)
-    plt.show()
     amplitudes_all_channels = []
     for channel in spectrum[0:1]:
         amplitudes = []
@@ -52,9 +52,10 @@ def main():
     # loads data from 0 to 1 sec
     t_idx = raw.time_as_index([100., 110.])
     data, times = raw[:, t_idx[0]:t_idx[1]]
+    start = time.time()
     amplitudes = extract_amplitudes(data)
-    plt.plot(amplitudes)
-    plt.show()
+    end = time.time()
+    print("elapsed time:", end - start)
     print(amplitudes)
 
 # time = np.linspace(0, 0.5, 500)
