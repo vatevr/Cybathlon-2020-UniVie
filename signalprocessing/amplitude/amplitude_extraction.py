@@ -36,7 +36,7 @@ def avg_band_amplitude(spectrum, lower_limit, upper_limit):
 def extract_amplitudes(input_signal):
     windowed_signal = apply_window_function(input_signal, WINDOW_FUNCTION)
     spectrum = frequency_spectrum(windowed_signal)
-    plt.plot(np.absolute(spectrum))
+    plt.plot(spectrum)
     plt.show()
     amplitudes_all_channels = []
     for channel in spectrum[0:1]:
