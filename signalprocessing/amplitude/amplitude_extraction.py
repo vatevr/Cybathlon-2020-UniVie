@@ -3,7 +3,6 @@ import sys
 import time
 import scipy.signal
 import mne
-import matplotlib.pyplot as plt
 
 # https://docs.scipy.org/doc/numpy/reference/generated/numpy.hanning.html
 # https://docs.scipy.org/doc/scipy/reference/tutorial/fftpack.html
@@ -32,19 +31,16 @@ def frequency_spectrum(windowed_signal):
 # pass whole spectrum for all channels to this function
 def avg_band_amplitude(spectrum, lower_limit, upper_limit):
     frequency_band = spectrum[int(lower_limit / FREQ_RESOLUTION):int(upper_limit / FREQ_RESOLUTION)]
-    return np.mean(frequency_band)
+    return np.mean(frequency_band, axis=1)
 
 
 def extract_amplitudes(input_signal):
     windowed_signal = apply_window_function(input_signal, WINDOW_FUNCTION)
     spectrum = frequency_spectrum(windowed_signal)
-    amplitudes_all_channels = []
-    for channel in spectrum[0:1]:
-        amplitudes = []
-        for wave, band_range in brain_freq_bands.items():
-            amplitudes.append(avg_band_amplitude(channel, band_range[0], band_range[1]))
-        amplitudes_all_channels.append(amplitudes)
-    return amplitudes_all_channels
+    amplitudes = []
+    for wave, band_range in brain_freq_bands.items():
+        amplitudes.append(avg_band_amplitude(spectrum, band_range[0], band_range[1]))
+    return amplitudes
 
 
 def main():
@@ -57,10 +53,6 @@ def main():
     end = time.time()
     print("elapsed time:", end - start)
     print(amplitudes)
-
-# time = np.linspace(0, 0.5, 500)
-# input_signal = np.sin(40 * 2 * np.pi * time) + 0.5 * np.sin(90 * 2 * np.pi * time)
-# extract_amplitudes(input_signal)
 
 
 if __name__ == "__main__":
