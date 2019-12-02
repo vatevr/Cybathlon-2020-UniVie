@@ -30,7 +30,7 @@ def frequency_spectrum(windowed_signal):
 
 # pass whole spectrum for all channels to this function
 def avg_band_amplitude(spectrum, lower_limit, upper_limit):
-    frequency_band = spectrum[int(lower_limit / FREQ_RESOLUTION):int(upper_limit / FREQ_RESOLUTION)]
+    frequency_band = spectrum[:, int(lower_limit / FREQ_RESOLUTION):int(upper_limit / FREQ_RESOLUTION)]
     return np.mean(frequency_band, axis=1)
 
 
