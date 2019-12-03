@@ -32,8 +32,8 @@ class PeakFrequency:
 
     def calculate(self, band, H):
         signal = np.zeros((self.samples, self.channels), dtype=complex)
-        from_val = self.samples // self.fs * self.bands[band][0]
-        to_val =  self.samples // self.fs * self.bands[band][1]
+        from_val = int(self.samples / self.fs * self.bands[band][0])
+        to_val = int(self.samples / self.fs * self.bands[band][1])
         signal[from_val:to_val, :] = H[from_val:to_val, :]
         signal = signal.T.dot(self.idft).T
         inst_phase = np.unwrap(np.angle(signal))
@@ -61,17 +61,3 @@ class PeakFrequency:
             t.join()
         # returns a dict for each frequency band containing a channel vector for each electrode's median inst freq
         return self.instant_frequency
-
-
-if __name__ == "__main__":
-    MAT = scipy.io.loadmat('motor-imagery-eeg.mat')
-    dict_keys = [*MAT.keys()]
-    X = MAT[dict_keys[3]]
-    data = X[0, :100, :10]
-    fs = 500
-    bands = {'all': (1, 45)}
-    H = PeakFrequency(10, 100, fs)
-    print("start")
-    res = H.do(data)
-    print("end")
-    print(res)
