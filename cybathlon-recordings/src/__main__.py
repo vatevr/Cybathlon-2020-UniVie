@@ -1,6 +1,6 @@
 import uuid
 
-from flask import Flask
+from flask import Flask, request, make_response
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine, LargeBinary, text as sa_text
 from sqlalchemy.dialects.postgresql.base import UUID, BYTEA
@@ -10,8 +10,11 @@ from sqlalchemy.orm import sessionmaker
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:docker@localhost:5433/postgres'
 
-db = SQLAlchemy(app)
+engine = create_engine('postgresql://postgres:docker@localhost:5433/postgres')
+Session = sessionmaker(bind=engine)
+session = Session()
 
+db = SQLAlchemy(app)
 
 class EEGRecording(db.Model):
     __tablename__ = 'eeg_recordings'
@@ -25,24 +28,23 @@ class EEGRecording(db.Model):
 
 @app.route('/record', methods=['POST'])
 def upload_recording():
-    return 'Rest API works!'
+    if 'file' not in request.files:
+        return 'No file found!'
+
+    file = request.files['file']
+    recording = EEGRecording(recording_file=file.read())
+    session.add(recording)
+    session.commit()
+
+    session.refresh(recording)
+
+    print(str(recording.id))
+
+    return str(recording.id) + ' uploaded to server'
 
 
 def main(args=None):
-    # app.run(port=5003)
-
-    engine = create_engine('postgresql://postgres:docker@localhost:5433/postgres')
-    Session = sessionmaker(bind=engine)
-    session = Session()
-
-    with open('../files/dummy.log', mode='rb') as file:
-        recording1 = EEGRecording(recording_file=file.read())
-        session.add(recording1)
-        session.commit()
-
-    result = session.query(EEGRecording).one()
-
-    print(result.id)
+    app.run(port=5003, debug=True)
 
 
 if __name__ == '__main__':
