@@ -1,6 +1,6 @@
 import uuid
 
-from flask import Flask, request, make_response
+from flask import Flask, request, make_response, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine, LargeBinary, text as sa_text
 from sqlalchemy.dialects.postgresql.base import UUID, BYTEA
@@ -26,7 +26,10 @@ class EEGRecording(db.Model):
         self.recording_file = recording_file
 
 
-@app.route('/record', methods=['POST'])
+def find_recording(id):
+    return True
+
+@app.route('/api/record', methods=['POST'])
 def upload_recording():
     if 'file' not in request.files:
         return 'No file found!'
@@ -41,6 +44,17 @@ def upload_recording():
     print(str(recording.id))
 
     return str(recording.id) + ' uploaded to server'
+
+@app.route('/api/label/<recording_id>', methods=['POST'])
+def mark_metadata(recording_id):
+    if not find_recording(recording_id):
+        return 'not found any recordings with id: ' + recording_id
+
+    content = request.json
+
+    print(str(content))
+
+    return jsonify({'uuid': recording_id})
 
 
 def main(args=None):
