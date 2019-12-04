@@ -6,7 +6,6 @@ from sqlalchemy import create_engine, LargeBinary, text as sa_text
 from sqlalchemy.dialects.postgresql.base import UUID, BYTEA
 from sqlalchemy.orm import sessionmaker
 
-
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:docker@localhost:5433/postgres'
 
@@ -16,10 +15,12 @@ session = Session()
 
 db = SQLAlchemy(app)
 
+
 class EEGRecording(db.Model):
     __tablename__ = 'eeg_recordings'
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=sa_text('uuid_generate_v4()'))
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4,
+                   server_default=sa_text('uuid_generate_v4()'))
     recording_file = db.Column(BYTEA(), nullable=False)
 
     def __init__(self, recording_file):
@@ -28,6 +29,7 @@ class EEGRecording(db.Model):
 
 def find_recording(id):
     return True
+
 
 @app.route('/api/record', methods=['POST'])
 def upload_recording():
@@ -44,6 +46,7 @@ def upload_recording():
     print(str(recording.id))
 
     return str(recording.id) + ' uploaded to server'
+
 
 @app.route('/api/label/<recording_id>', methods=['POST'])
 def mark_metadata(recording_id):
