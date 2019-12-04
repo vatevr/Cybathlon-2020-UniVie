@@ -1,6 +1,7 @@
 import numpy as np
 import sys
-from topomap_plot import plot_single_topomap
+from optparse import OptionParser
+from topomap_plot import plot_data_for_single_channel
 import time
 import scipy.signal
 import mne
@@ -13,8 +14,8 @@ brain_freq_bands = {
     'gamma': (30, 45)
 }
 
-WINDOW_SIZE = 10.
-SAMPLING_RATE = 500
+WINDOW_SIZE = float(sys.argv[1])
+SAMPLING_RATE = int(sys.argv[2])
 FREQ_RESOLUTION = 1. / WINDOW_SIZE
 WINDOW_FUNCTION = scipy.signal.hann(M=int(WINDOW_SIZE * SAMPLING_RATE), sym=False)
 
@@ -43,17 +44,17 @@ def extract_amplitudes(input_signal):
 
 
 def main():
-    #print("the script has the name %s" % (sys.argv[1]))
+    print(WINDOW_SIZE, SAMPLING_RATE)
     raw = mne.io.read_raw_brainvision('../data/20191104_Cybathlon_Test_1.vhdr')
-    # loads data from 0 to 1 sec
     t_idx = raw.time_as_index([100., 110.])
     data, times = raw[:, t_idx[0]:t_idx[1]]
     start = time.time()
-    amplitudes = extract_amplitudes(data)
+    # amplitudes = extract_amplitudes(data)
     end = time.time()
-    plot_single_topomap(amplitudes[2])
+    # print(raw.info.ch_names)
+    # plot_data_for_single_channel(amplitudes[2], raw)
     print("elapsed time:", end - start)
-    print(amplitudes)
 
-    if __name__ == "__main__":
-        main()
+
+if __name__ == "__main__":
+    main()
