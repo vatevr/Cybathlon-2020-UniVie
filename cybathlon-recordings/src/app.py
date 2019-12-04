@@ -31,7 +31,7 @@ class EEGRecording(db.Model):
 class EEGRecordingMetadata(db.Model):
     __tablename__ = 'eeg_recording_metadata'
 
-    session_id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=sa_text('uuid_generate_v4()'))
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=sa_text('uuid_generate_v4()'))
     subject_id = db.Column(db.Integer, nullable=False)
     paradigm_id = db.Column(db.Integer, nullable=False)
     created_at = db.Column(db.TIMESTAMP, nullable=False)
