@@ -1,3 +1,4 @@
+import datetime
 import uuid
 
 from flask import Flask, request, make_response, jsonify
@@ -27,6 +28,36 @@ class EEGRecording(db.Model):
         self.recording_file = recording_file
 
 
+class EEGRecordingMetadata(db.Model):
+    __tablename__ = 'eeg_recording_metadata'
+
+    session_id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=sa_text('uuid_generate_v4()'))
+    subject_id = db.Column(db.Integer, nullable=False)
+    paradigm_id = db.Column(db.Integer, nullable=False)
+    created_at = db.Column(db.TIMESTAMP, nullable=False)
+    comment = db.Column(db.Text, nullable=True)
+    recorded_by = db.Column(db.Unicode(60), nullable=False)
+    with_feedback = db.Column(db.Boolean, nullable=False)
+    recording = db.Column(UUID(as_uuid=True), nullable=False)
+
+    def __init__(self,
+                 subject_id,
+                 paradigm_id,
+                 created_at,
+                 comment,
+                 recorded_by,
+                 with_feedback,
+                 recording):
+        self.subject_id = subject_id
+        self.paradigm_id = paradigm_id
+        self.created_at = created_at
+        self.comment = comment
+        self.recorded_by = recorded_by
+        self.with_feedback = with_feedback
+        self.recording = recording
+
+
+# TODO db level validation
 def find_recording(id):
     return True
 
@@ -55,6 +86,18 @@ def mark_metadata(recording_id):
 
     content = request.json
 
+    metadata = EEGRecordingMetadata(int(content['subject_id']),
+                                    int(content['paradigm_id']),
+                                    datetime.datetime.now(),
+                                    str(content['comment']),
+                                    bool(content['recorded_by']),
+                                    bool(content['with_feedback']),
+                                    uuid.UUID(recording_id))
+
+    session.add(metadata)
+    session.commit()
+
+    session.refresh(metadata)
     print(str(content))
 
     return jsonify({'uuid': recording_id})
