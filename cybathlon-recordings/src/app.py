@@ -104,7 +104,7 @@ def mark_metadata(recording_id):
                                     int(content['paradigm_id']),
                                     datetime.datetime.now(),
                                     str(content['comment']),
-                                    bool(content['recorded_by']),
+                                    str(content['recorded_by']),
                                     bool(content['with_feedback']),
                                     uuid.UUID(recording_id))
 
@@ -126,29 +126,26 @@ def find_recordings():
     if 'recorded_by' in request.args:
         query_params['recorded_by'] = request.args.get('recorded_by')
 
+    query = session.query(EEGRecordingMetadata)
+
     if request.args.get('subject_id'):
-        if request.args.get('paradigm_id'):
-            query = session.query(EEGRecordingMetadata).filter(
-                EEGRecordingMetadata.subject_id == int(request.args.get('subject_id')),
-                EEGRecordingMetadata.paradigm_id == int(request.args.get('paradigm_id')),
-            )
+        query = query.filter(
+            EEGRecordingMetadata.subject_id == int(request.args.get('subject_id'))
+        )
 
-            result = query.all()
+    if request.args.get('paradigm_id'):
+        query = query.filter(
+            EEGRecordingMetadata.paradigm_id == int(request.args.get('paradigm_id')),
+        )
 
-            return Response(json.dumps([row.as_dict() for row in result]), mimetype='application/json')
+    if request.args.get('recorded_by'):
+        query = query.filter(
+            EEGRecordingMetadata.recorded_by.ilike(str(request.args.get('recorded_by'))),
+        )
 
-    # queries = []
-    #
-    # if request.args.get('recorded_by'):
-    #     queries.append(EEGRecordingMetadata.recorded_by == request.args.get('recorded_by'))
-    #
-    # if request.args.get('subject_id'):
-    #     queries.append(EEGRecordingMetadata.subject_id == 1)
-    #
-    # if request.args.get('paradigm_id'):
-    #     queries.append(EEGRecordingMetadata.paradigm_id == int(request.args.get('paradigm_id')))
-    #
+    result = query.all()
 
+    return Response(json.dumps([row.as_dict() for row in result]), mimetype='application/json')
 
 
 def main(args=None):
