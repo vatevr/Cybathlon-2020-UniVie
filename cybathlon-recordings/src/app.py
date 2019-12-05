@@ -1,7 +1,8 @@
 import datetime
+import json
 import uuid
 
-from flask import Flask, request, make_response, jsonify
+from flask import Flask, request, make_response, jsonify, Response
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine, LargeBinary, text as sa_text
 from sqlalchemy.dialects.postgresql.base import UUID, BYTEA
@@ -31,7 +32,8 @@ class EEGRecording(db.Model):
 class EEGRecordingMetadata(db.Model):
     __tablename__ = 'eeg_recording_metadata'
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=sa_text('uuid_generate_v4()'))
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4,
+                   server_default=sa_text('uuid_generate_v4()'))
     subject_id = db.Column(db.Integer, nullable=False)
     paradigm_id = db.Column(db.Integer, nullable=False)
     created_at = db.Column(db.TIMESTAMP, nullable=False)
@@ -55,6 +57,18 @@ class EEGRecordingMetadata(db.Model):
         self.recorded_by = recorded_by
         self.with_feedback = with_feedback
         self.recording = recording
+
+    def as_dict(self):
+        return {
+            'id': str(self.id),
+            'subject_id': self.subject_id,
+            'paradigm_id': self.paradigm_id,
+            'created_at': str(self.created_at),
+            'comment': self.comment,
+            'recorded_by': self.recorded_by,
+            'with_feedback': self.with_feedback,
+            'recording': str(self.recording),
+        }
 
 
 # TODO db level validation
@@ -101,6 +115,40 @@ def mark_metadata(recording_id):
     print(str(content))
 
     return jsonify({'uuid': recording_id})
+
+
+@app.route('/api/recordings', methods=['GET'])
+def find_recordings():
+    query_params = {key: int(request.args.get(key))
+                    for key in ['subject_id', 'paradigm_id']
+                    if request.args.get(key) is not None}
+
+    if 'recorded_by' in request.args:
+        query_params['recorded_by'] = request.args.get('recorded_by')
+
+    if request.args.get('subject_id'):
+        if request.args.get('paradigm_id'):
+            query = session.query(EEGRecordingMetadata).filter(
+                EEGRecordingMetadata.subject_id == int(request.args.get('subject_id')),
+                EEGRecordingMetadata.paradigm_id == int(request.args.get('paradigm_id')),
+            )
+
+            result = query.all()
+
+            return Response(json.dumps([row.as_dict() for row in result]), mimetype='application/json')
+
+    # queries = []
+    #
+    # if request.args.get('recorded_by'):
+    #     queries.append(EEGRecordingMetadata.recorded_by == request.args.get('recorded_by'))
+    #
+    # if request.args.get('subject_id'):
+    #     queries.append(EEGRecordingMetadata.subject_id == 1)
+    #
+    # if request.args.get('paradigm_id'):
+    #     queries.append(EEGRecordingMetadata.paradigm_id == int(request.args.get('paradigm_id')))
+    #
+
 
 
 def main(args=None):
