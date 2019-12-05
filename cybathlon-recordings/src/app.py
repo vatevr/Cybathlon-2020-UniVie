@@ -2,11 +2,11 @@ import datetime
 import json
 import uuid
 
-from flask import Flask, request, make_response, jsonify, Response
+from flask import Flask, request, make_response, jsonify, Response, send_file
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine, LargeBinary, text as sa_text
 from sqlalchemy.dialects.postgresql.base import UUID, BYTEA
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, load_only
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:docker@localhost:5433/postgres'
@@ -24,9 +24,11 @@ class EEGRecording(db.Model):
     id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4,
                    server_default=sa_text('uuid_generate_v4()'))
     recording_file = db.Column(BYTEA(), nullable=False)
+    filename = db.Column(db.VARCHAR(60), nullable=False)
 
-    def __init__(self, recording_file):
+    def __init__(self, recording_file, filename):
         self.recording_file = recording_file
+        self.filename = filename
 
 
 class EEGRecordingMetadata(db.Model):
@@ -71,10 +73,17 @@ class EEGRecordingMetadata(db.Model):
         }
 
 
-# TODO db level validation
 def find_recording(id):
-    return True
+    rec = session.query(EEGRecording.id) \
+        .with_entities(EEGRecording.id) \
+        .filter(EEGRecording.id == uuid.UUID(id))\
+        .scalar()
 
+    return rec is not None
+
+
+def api_error(message):
+    return Response(json.dumps({'message': message}), status=500)
 
 @app.route('/api/record', methods=['POST'])
 def upload_recording():
@@ -82,7 +91,7 @@ def upload_recording():
         return Response(json.dumps({'message': 'internal server error!'}), status=500)
 
     file = request.files['file']
-    recording = EEGRecording(recording_file=file.read())
+    recording = EEGRecording(recording_file=file.read(), filename=file.filename)
     session.add(recording)
     session.commit()
 
@@ -93,10 +102,24 @@ def upload_recording():
     return Response(json.dumps({'id': str(recording.id), 'message': 'upload successfull'}))
 
 
+@app.route('/api/record/<recording_id>', methods=['GET'])
+def download_recording(recording_id):
+    if not find_recording(recording_id):
+        return api_error(f'file with id {recording_id} was not found')
+
+    recording: EEGRecording = session \
+        .query(EEGRecording) \
+        .filter(EEGRecording.id == uuid.UUID(recording_id)) \
+        .first()
+
+    return Response(recording.recording_file, headers={"Content-disposition":
+                 "attachment; filename=" + recording.filename})
+
+
 @app.route('/api/label/<recording_id>', methods=['POST'])
 def mark_metadata(recording_id):
     if not find_recording(recording_id):
-        return 'not found any recordings with id: ' + recording_id
+        return api_error(f'file with id {recording_id} was not found')
 
     content = request.json
 
