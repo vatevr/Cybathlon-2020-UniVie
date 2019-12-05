@@ -79,7 +79,7 @@ def find_recording(id):
 @app.route('/api/record', methods=['POST'])
 def upload_recording():
     if 'file' not in request.files:
-        return 'No file found!'
+        return Response(json.dumps({'message': 'internal server error!'}), status=500)
 
     file = request.files['file']
     recording = EEGRecording(recording_file=file.read())
@@ -90,7 +90,7 @@ def upload_recording():
 
     print(str(recording.id))
 
-    return str(recording.id) + ' uploaded to server'
+    return Response(json.dumps({'id': str(recording.id), 'message': 'upload successfull'}))
 
 
 @app.route('/api/label/<recording_id>', methods=['POST'])
