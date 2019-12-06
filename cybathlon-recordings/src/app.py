@@ -2,14 +2,14 @@ import datetime
 import json
 import uuid
 
-from flask import Flask, request, make_response, jsonify, Response, send_file
+from flask import Flask, request, jsonify, Response
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import create_engine, LargeBinary, text as sa_text
+from sqlalchemy import create_engine, text as sa_text
 from sqlalchemy.dialects.postgresql.base import UUID, BYTEA
-from sqlalchemy.orm import sessionmaker, load_only
+from sqlalchemy.orm import sessionmaker
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:docker@localhost:5433/postgres'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:docker@0.0.0.0:5432/postgres'
 
 engine = create_engine('postgresql://postgres:docker@localhost:5433/postgres')
 Session = sessionmaker(bind=engine)
@@ -172,7 +172,7 @@ def find_recordings():
 
 
 def main(args=None):
-    app.run(port=5003, debug=True)
+    app.run(port=9888, host='0.0.0.0', debug=True)
 
 
 if __name__ == '__main__':
