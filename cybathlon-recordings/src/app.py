@@ -9,7 +9,7 @@ from sqlalchemy.dialects.postgresql.base import UUID, BYTEA
 from sqlalchemy.orm import sessionmaker
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:docker@localhost:5433/postgres'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:docker@0.0.0.0:5432/postgres'
 
 engine = create_engine('postgresql://postgres:docker@localhost:5433/postgres')
 Session = sessionmaker(bind=engine)

@@ -1,5 +1,6 @@
 FROM python:3.7.1
-WORKDIR /project
-ADD . /project
+COPY . /cybathlon-recordings
+WORKDIR /cybathlon-recordings
 RUN pip install -r requirements.txt
-CMD ["python","/src/app.py"]
+ENTRYPOINT ["python"]
+CMD ["./src/app.py"]

@@ -3,13 +3,15 @@ version: '3.7'
 services:
   db:
     image: postgres:10.1-alpine
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: docker
     volumes:
       - postgres_data:/var/lib/postgresql/data/
   web:
-    build: .
-    command: python /src/app.py 0.0.0.0:9888
+    image: vatevr/cybathlon-recordings
     volumes:
-      - .:/code
+      - .:/src
     ports:
       - 9888:9888
     depends_on:
