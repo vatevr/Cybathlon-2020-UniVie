@@ -34,31 +34,11 @@ class AmplitudeExtraction:
             amplitudes.append(self.avg_band_amplitude(spectrum, band_range[0], band_range[1]))
         return amplitudes
 
-    def do(self, x):
-        self.instant_frequency.fill(np.nan)
-        x = np.asarray(x)
-        if x.shape[0] != self.samples and x.shape[1] != self.channels:
-            raise ValueError("configs (", self.channels, ",", self.sample, ") do not match input dims ", x.shape)
-        if np.iscomplexobj(x):
-            raise ValueError("x is not a real signal.")
-        H = self.dft.dot(x) * self.hilbert.T
-        threads = []
-        for i, band in enumerate(self.bands):
-            t = threading.Thread(
-                target=self.calculate,
-                args=(band, i, H))
-            threads.append(t)
-            t.start()
-        for t in threads:
-            t.join()
-        # returns a dict for each frequency band containing a channel vector for each electrode's median inst freq
-        return self.instant_frequency
-
 
 class AmplitudeExtractionBox(OVBox):
     def __init__(self):
         OVBox.__init__(self)
-        self.sampling_rate = 0
+        self.samplingFrequency = 0
         self.epochSampleCount = 0
         self.startTime = 0.
         self.endTime = 0.
@@ -70,9 +50,9 @@ class AmplitudeExtractionBox(OVBox):
         self.peakFrequency = None
 
     def initialize(self):
-        self.sampling_rate = int(self.setting['Sampling frequency'])
+        self.samplingFrequency = int(self.setting['Sampling frequency'])
         self.epochSampleCount = int(self.setting['Generated epoch sample count'])
-        self.peakFrequency = AmplitudeExtraction(window_size, self.sampling_rate)
+        self.peakFrequency = AmplitudeExtraction(window_size, self.samplingFrequency)
 
     def process(self):
         for chunkIndex in range(len(self.input[0])):
@@ -99,4 +79,4 @@ class AmplitudeExtractionBox(OVBox):
                 self.output[0].append(self.input[0].pop())
 
 
-box = MyOVBox()
+box = AmplitudeExtractionBox()
