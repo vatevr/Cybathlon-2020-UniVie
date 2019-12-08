@@ -1,17 +1,28 @@
 import datetime
 import json
+import os
 import uuid
+import warnings
 
 from flask import Flask, request, jsonify, Response
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import create_engine, text as sa_text
+from sqlalchemy import create_engine, text as sa_text, MetaData
 from sqlalchemy.dialects.postgresql.base import UUID, BYTEA
 from sqlalchemy.orm import sessionmaker
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:docker@0.0.0.0:5432/postgres'
 
-engine = create_engine('postgresql://postgres:docker@localhost:5433/postgres')
+dbuser = os.environ.get('DBUSER', 'postgres')
+dbpassword = os.environ.get('DBPASSWORD', 'docker')
+dbhost = os.environ.get('DBHOST', '0.0.0.0')
+dbport = os.environ.get('DBPORT', '5432')
+
+if not os.environ.get('TEST'):
+    warnings.warn('TEST environment variable not found.')
+
+app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://{dbuser}:{dbpassword}@{dbhost}:{dbport}/postgres'
+
+engine = create_engine(f'postgresql://{dbuser}:{dbpassword}@{dbhost}:{dbport}/postgres')
 Session = sessionmaker(bind=engine)
 session = Session()
 
@@ -169,6 +180,34 @@ def find_recordings():
     result = query.all()
 
     return Response(json.dumps([row.as_dict() for row in result]), mimetype='application/json')
+
+
+@app.route('/api/verify', methods=['GET'])
+def verify_connection():
+    user = 'postgres'
+    password = 'docker'
+    host = request.args.get('host')
+    port = request.args.get('port')
+
+    verify_engine = create_engine(f'postgresql://{user}:{password}@{host}:{port}/postgres')
+    engine_connection = verify_engine.connect()
+
+    print(verify_engine)
+    print(engine_connection)
+
+    # Create a metadata instance
+    metadata = MetaData(verify_engine)
+    # Declare a table
+    table = db.Table('Example', metadata,
+                  db.Column('id', db.Integer, primary_key=True),
+                  db.Column('name', db.String))
+    # Create all tables
+    metadata.create_all()
+    tables = []
+    for _t in metadata.tables:
+        tables.append(_t)
+
+    return Response(json.dumps(tables), mimetype='application/json')
 
 
 def main(args=None):
