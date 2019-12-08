@@ -4,12 +4,21 @@ services:
   db:
     image: postgres:10.1-alpine
     restart: always
+    ports:
+      - 5434:5432
     environment:
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: docker
     volumes:
       - postgres_data:/var/lib/postgresql/data/
   web:
-    image: vatevr/cybathlon-recordings
+    build: ./
+    environment:
+      TEST: test_value
+      DBUSER: postgres
+      DBPASSWORD: docker
+      DBHOST: localhost
+      DBPORT: 5434
     volumes:
       - .:/src
     ports:
@@ -19,3 +28,9 @@ services:
 
 volumes:
   postgres_data:
+
+networks:
+  cybathlon:
+    driver: bridge
+
+
