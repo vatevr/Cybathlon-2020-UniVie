@@ -52,7 +52,7 @@ class AmplitudeExtractionBox(OVBox):
     def initialize(self):
         self.samplingFrequency = int(self.setting['Sampling frequency'])
         self.epochSampleCount = int(self.setting['Generated epoch sample count'])
-        self.amplitudeExtraction = AmplitudeExtraction(window_size, self.samplingFrequency)
+        self.amplitudeExtraction = AmplitudeExtraction(1., self.samplingFrequency)
 
     def process(self):
         for chunkIndex in range(len(self.input[0])):
