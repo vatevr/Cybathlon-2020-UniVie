@@ -47,7 +47,7 @@ class AmplitudeExtractionBox(OVBox):
         self.timeBuffer = list()
         self.signalBuffer = None
         self.signalHeader = None
-        self.peakFrequency = None
+        self.amplitudeExtraction = None
 
     def initialize(self):
         self.samplingFrequency = int(self.setting['Sampling frequency'])
