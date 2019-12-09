@@ -19,7 +19,7 @@ EEG_DATA_FILEPATH = "..\\eeg-data\\data_set_IVa_aa_mat\\100Hz\\data_set_IVa_aa.m
 CUE_LENGTH = 3.5 #seconds. How long was the cue displayed?
 SAMPLING_FREQUENCY = 100 #Hz
 CHANNELS = 118 #Number of Channels
-BANDS = 6 #Number of frequency bands we are working with
+BANDS = 5 #Number of frequency bands we are working with
 
 
 
@@ -29,10 +29,11 @@ def csp(X_1, X_2, n) :
     :param X_2 : numpy array corresponding to another class. Shape: channels * trials
     :param n : integer number of CSP components to be returned
     """
+    eigenvecs_number = int(n/2) #floor to nearest zero
     cov_1 = np.cov(X_1)
     cov_2 = np.cov(X_2)
     eig_value, eig_vector = np.linalg.eigh(np.linalg.inv(cov_2)*cov_1) #eigenvalue decomposition of cov_2^-1 * cov_1 = P D P^-1, where P := matrix of eigen vectors and D := diagonal matrix of eigen values
-    return eig_vector[:, :n] #return first n components of CSP
+    return np.concatenate((eig_vector[:, :eigenvecs_number],eig_vector[:, len(eig_vector)-eigenvecs_number:]),axis=1) #return first n/2 and last n/2 components of CSP
 
 def fbcsp(X_1, X_2, n) :
     """
@@ -45,7 +46,6 @@ def fbcsp(X_1, X_2, n) :
         fbcsp_result[:,:,band] = csp(X_1[:,:,band], X_2[:,:,band], n)
     return fbcsp_result
 
-            
     
 
 if __name__ == '__main__':    
@@ -62,7 +62,7 @@ if __name__ == '__main__':
     avg_amp_2 = np.zeros((CHANNELS, (label_class == 2).sum(), BANDS))  #average amplitude (in freq domain) for each band for class label 2
     
     for channel in range(CHANNELS) :                #note to self: this can be optimized both time and memory wise
-        for cue in range(np.minimum((label_class == 1).sum(), (label_class == 2).sum())) :
+        for cue in range(np.minimum((label_class == 1).sum(), (label_class == 2).sum())) : #matrix needs to be quadratic. 
             for sample in range(int(SAMPLING_FREQUENCY*CUE_LENGTH)) : 
                 X[channel][cue][sample] = raw_data[label_pos[cue]+sample][channel]
             if label_class[cue] == 1 :
@@ -71,6 +71,9 @@ if __name__ == '__main__':
                 avg_amp_2[channel][cue] = sp.extract_amplitudes(X[channel][cue])
             
     fbcsp_result = fbcsp(avg_amp_1, avg_amp_2[:,:80,:], 4)
+    
+    filtered_result = np.dot(raw_data, fbcsp_result[:, :, 1])
+    
     
     #subtracting the mean (mean-centering) can improve CSP
             
