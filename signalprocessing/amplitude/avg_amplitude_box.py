@@ -52,7 +52,7 @@ class AmplitudeExtractionBox(OVBox):
     def initialize(self):
         self.samplingFrequency = int(self.setting['Sampling frequency'])
         self.epochSampleCount = int(self.setting['Generated epoch sample count'])
-        self.peakFrequency = AmplitudeExtraction(window_size, self.samplingFrequency)
+        self.amplitudeExtraction = AmplitudeExtraction(window_size, self.samplingFrequency)
 
     def process(self):
         for chunkIndex in range(len(self.input[0])):
@@ -71,7 +71,7 @@ class AmplitudeExtractionBox(OVBox):
             elif (type(self.input[0][chunkIndex]) == OVSignalBuffer):
                 chunk = self.input[0].pop()
                 numpyBuffer = np.array(chunk).reshape(tuple(self.signalHeader.dimensionSizes))
-                result = self.extract_amplitudes(numpyBuffer)
+                result = self.amplitudeExtraction.extract_amplitudes(numpyBuffer)
                 chunk_delta = OVSignalBuffer(chunk.startTime, chunk.endTime, result.flatten().tolist())
                 self.output[0].append(chunk)
 
