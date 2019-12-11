@@ -8,16 +8,17 @@ Created on Fri Nov 22 14:12:00 2019
 
 from mne.decoding import CSP
 import numpy as np
+import sys
 import matplotlib.pyplot as plt
-import amplitude_extraction as sp #Melanie Balaz' amplitude_extraction script
+import amplitude_extraction_modified as sp #Melanie Balaz' amplitude_extraction script with a slight modification
 from scipy.io import loadmat
 
 
 
 #define parameters
-EEG_DATA_FILEPATH = "..\\eeg-data\\data_set_IVa_aa_mat\\100Hz\\data_set_IVa_aa.mat" #filepath to the data
-CUE_LENGTH = 3.5 #seconds. How long was the cue displayed?
-SAMPLING_FREQUENCY = 100 #Hz
+EEG_DATA_FILEPATH = "..\\..\\..\\eeg-data\\data_set_IVa_aa_mat\\100Hz\\data_set_IVa_aa.mat" #filepath to the data
+CUE_LENGTH = float(sys.argv[1]) #seconds. How long was the cue displayed?
+SAMPLING_FREQUENCY = int(sys.argv[2]) #Hz
 CHANNELS = 118 #Number of Channels
 BANDS = 5 #Number of frequency bands we are working with
 
@@ -58,19 +59,24 @@ if __name__ == '__main__':
     
     #get cues 
     X = np.zeros((CHANNELS, len(label_pos), int(CUE_LENGTH*SAMPLING_FREQUENCY))) #time domain signal
+    max_number_cues = np.minimum((label_class == 1).sum(), (label_class == 2).sum()) #matrix needs to be quadratic. 
     avg_amp_1 = np.zeros((CHANNELS, (label_class == 1).sum(), BANDS))  #average amplitude (in freq domain) for each band for class label 1
     avg_amp_2 = np.zeros((CHANNELS, (label_class == 2).sum(), BANDS))  #average amplitude (in freq domain) for each band for class label 2
     
     for channel in range(CHANNELS) :                #note to self: this can be optimized both time and memory wise
-        for cue in range(np.minimum((label_class == 1).sum(), (label_class == 2).sum())) : #matrix needs to be quadratic. 
+        i = 0
+        j = 0
+        for cue in range((label_class == 1).sum()+(label_class == 2).sum()) :
             for sample in range(int(SAMPLING_FREQUENCY*CUE_LENGTH)) : 
                 X[channel][cue][sample] = raw_data[label_pos[cue]+sample][channel]
             if label_class[cue] == 1 :
-                avg_amp_1[channel][cue] = sp.extract_amplitudes(X[channel][cue])
+                avg_amp_1[channel][i] = sp.extract_amplitudes(X[channel][cue])
+                i += 1
             elif label_class[cue] == 2 :
-                avg_amp_2[channel][cue] = sp.extract_amplitudes(X[channel][cue])
+                avg_amp_2[channel][j] = sp.extract_amplitudes(X[channel][cue])
+                j += 1
             
-    fbcsp_result = fbcsp(avg_amp_1, avg_amp_2[:,:80,:], 4)
+    fbcsp_result = fbcsp(avg_amp_1[:,:max_number_cues,:], avg_amp_2[:,:max_number_cues,:], 4)
     
     filtered_result = np.dot(raw_data, fbcsp_result[:, :, 1])
     
