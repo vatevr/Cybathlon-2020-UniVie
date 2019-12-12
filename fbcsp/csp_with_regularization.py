@@ -6,7 +6,6 @@ Created on Fri Nov 22 14:12:00 2019
 """
 
 
-from mne.decoding import CSP
 import numpy as np
 import sys
 import matplotlib.pyplot as plt
