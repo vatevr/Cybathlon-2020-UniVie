@@ -149,7 +149,7 @@ if __name__ == '__main__':
     
     # Sklearn Pipelines can be useful, if the same steps are always performed. In our case it will be pre-processing -> signal-processing -> filter-bank -> csp -> [feature-selection] -> classification.
     # Later it can potentially allow us to grid-search parameters for every step in a unified way.
-    clf = Pipeline([('CSP', csp), ('SVM', svm)])
+    clf = Pipeline([('CSPP', csp), ('SVM', svm)])
     
     scores = cross_val_score(clf, epochs_data_train, labels, cv=cv, n_jobs=1, verbose=0) #estimator, data to be fit, classes, cross validator, number of CPU's        
     
