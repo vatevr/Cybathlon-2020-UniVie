@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Nov 22 14:12:00 2019
+Created on Wed Dec 18 14:06:56 2019
 
 @author: Matthaeus Hilpold
 """
@@ -17,7 +17,7 @@ from mne.filter import filter_data
 
 
 
-class FBCSP :
+class FBCSP (OVBox):
     
     def __init__(self, components=4, bands=None, filter_target='epoched', classes=2, concatenate=False, avg_band=False):
         """
@@ -29,6 +29,7 @@ class FBCSP :
         
         :attribute filters_ : numpy array. CSP filter.  Shape: channels * samples
         """
+        OVBox.__init__(self)
         self.avg_band = avg_band
         self.concatenate = concatenate
         self.components  = components
@@ -40,7 +41,16 @@ class FBCSP :
             self.bands = {'delta': (1, 4), 'theta': (4, 8), 'alpha': (8, 12), 'beta': (12, 30), 'gamma': (30, 45)}
         else:
             self.bands = bands
-            
+    
+    def initialize(self) :
+        #TODO
+        print('TODO')
+    
+    def process(self) :
+        #TODO
+        print('TODO')
+
+    
     def fit(self, X, y):
         """
         :param X : 4d or 3d numpy array of epoched data. Shape: band (optional) * epochs * channels * samples
@@ -217,120 +227,4 @@ class FBCSP :
             else :
                 #TODO
                 print('TODO')
-
-class Preproc :
-    
-    def __init__(self, bands=None, classes=2, fs=100, windowlength=3.5):
-        """
-        :param bands : dict. one or multiple frequency bands
-        :param classes : int. number of classes that will be evaluated. Default 2 for binary classification. Multiclass will be evaluated as one-versus-rest.
-        :param fs : int. sampling frequency
-        :param windowlength : float. length of a window in seconds. 
-        
-        :attribute epoched_data_ : numpy array of epoched data. Shape: bands * epochs *channels * samples
-        """
-
-        self.classes = classes
-        self.fs = fs
-        self.windowlength = windowlength
-        
-        if bands == None :
-            self.bands = {'sub-band' : (7, 30)}
-        elif bands == 'all' :
-            self.bands = {'delta': (1, 4), 'theta': (4, 8), 'alpha': (8, 12), 'beta': (12, 30), 'gamma': (30, 45)}
-        else:
-            self.bands = bands
-    
-    def center_data(self, raw_data) :
-        
-        #center data. remove mean from each channel.
-        raw_data = np.array([(raw_data.T[channel] - np.mean(raw_data.T[channel]))  for channel in range(raw_data.shape[0])])
-        print("Centering complete. Centered data shape: " + str(raw_data.shape))
-
-    def bpfilter_data(self, raw_data) :
-        
-        if len(self.bands.items()) > 1 :
-            #band-pass filter raw data
-            raw_data_filtered = np.zeros((len(self.bands.items()), raw_data.shape[0], raw_data.shape[1]))
-        
-            for channel in range(raw_data.shape[0]) :
-                i = 0
-                for name, band in self.bands.items() :
-                    raw_data_filtered[i, channel, :] = filter_data(raw_data[channel], self.fs,  band[0], band[1], copy=True,verbose=0)
-                    i += 1
-            raw_data = raw_data_filtered
-            print("Bandpass filtering complete. Bandpass filtered data shape: " + str(raw_data.shape))
-        
-        else :
-            for key, value in self.bands.items() :
-                raw_data = np.array([filter_data(raw_data[channel], self.fs,  value[0], value[1], copy=True, verbose=0) for channel in range(raw_data.shape[0])])
-            print("Bandpass filtering complete. Bandpass filtered data shape: " + str(raw_data.shape))
-     
-    def epoch(self, raw_data, label_pos) :
-        
-        #extract epochs         
-        samples_per_epoch = int(self.fs*self.windowlength)     #number of samples in a window
-        
-        if len(self.bands) > 1 :
-            
-            self.epoched_data_ = np.zeros((len(self.bands.items()), len(label_pos), raw_data.shape[0], samples_per_epoch)) #filter-bank time domain signal with epochs
-            
-            for epoch in range(len(label_pos)) :
-                self.epoched_data_[:, epoch, :, :] = raw_data[:,:,label_pos[epoch]:(label_pos[epoch]+samples_per_epoch)]
-            print("Epoching complete. Epoched data shape: " + str(self.epoched_data_.shape))
-            
-        else :
-            self.epoched_data_ = np.zeros((len(label_pos), raw_data.shape[0], samples_per_epoch)) #time domain signal with epochs for a single band.
-            
-            for epoch in range(len(label_pos)) :
-                self.epoched_data_[epoch, :, :] = raw_data[:,label_pos[epoch]:(label_pos[epoch]+samples_per_epoch)]
-            print("Epoching complete. Epoched data shape: " + str(self.epoched_data_.shape))
-                
-    def preproc(self, raw_data, label_pos) :
-        
-        raw_data = raw_data.astype(float) #filter_data requires float64 unfortunately, therefore int16 needs to be cast to f64
-        
-        #center data. remove mean from each channel.
-        self.center_data(raw_data) # maybe sklearn.preprocessing.scale better?        
-        
-        #band-pass filter raw data
-        self.bpfilter_data(raw_data)
-               
-        #extract epochs         
-        self.epoch(raw_data, label_pos)
-        
-        print("Pre-processing complete. Data shape: " + str(self.epoched_data_.shape))
-        
-        return self.epoched_data_
-
-if __name__ == '__main__':   
-    #define parameters
-    EEG_DATA_FILEPATH = "..\\..\\..\\eeg-data\\data_set_IVa_aa_mat\\100Hz\\data_set_IVa_aa.mat" #filepath to the data
-    #window_length = float(sys.argv[1]) #seconds. How long was the cue displayed? 
-    #fs = int(sys.argv[2]) #Hz
-    
-    window_length = 3.5 #seconds. How long was the cue displayed? 
-    fs = 100 #Hz
-    
-    #read data
-    data_set_IVa_aa = loadmat(EEG_DATA_FILEPATH)
-
-    raw_data = data_set_IVa_aa['cnt'].T
-    label_pos = data_set_IVa_aa['mrk']['pos'][0][0][0] #epoch position (onset) within time signal
-    label_class  = data_set_IVa_aa['mrk']['y'][0][0][0] #epoch class
-    
-    p = Preproc(bands=None, fs=fs, windowlength=window_length)
-    
-    X = p.preproc(raw_data, label_pos)
-    
-    csp = FBCSP(filter_target='raw')
-    print('-----------------------------------------------------')
-    csp.fit(X, label_class)
-    result_1 = csp.transform(raw_data)
-    print('-----------------------------------------------------')
-    csp2 = FBCSP(filter_target='epoched', concatenate = True)
-    result_2 = csp2.fit_transform(X, label_class)
-    print('-----------------------------------------------------')
-    csp3 = FBCSP(filter_target='epoched', concatenate = False)
-    result_3 = csp3.fit_transform(X, label_class)
-    
+box = FBCSP()

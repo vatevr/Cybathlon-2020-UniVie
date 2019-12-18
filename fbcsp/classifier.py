@@ -12,6 +12,8 @@ And on code from the sklearn library.
 
 import numpy as np
 import matplotlib.pyplot as plt
+import amplitude_extraction as sp
+import topomap_plot as tp
 
 from sklearn.pipeline import Pipeline
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
@@ -20,10 +22,13 @@ from sklearn.multiclass import OneVsRestClassifier as OVR #this meta-classifier 
 from sklearn.model_selection import RepeatedKFold, ShuffleSplit, cross_val_score, learning_curve #various algorithms to cross validate and evaluate. Maybe RepeatedKFold as well? 
 
 from mne import Epochs, pick_types, events_from_annotations
+from mne.channels.layout import _auto_topomap_coords as pos_from_raw
 from mne.channels import read_layout
 from mne.io import concatenate_raws, read_raw_edf
 from mne.datasets import eegbci
 from mne.decoding import CSP
+from FBCSP import FBCSP
+
 
 def plot_learning_curve(estimator, X, y, cv) :
     """
@@ -64,16 +69,19 @@ def plot_scores_over_time(w_start, w_length, cv_split, epochs, epochs_train, lab
     for train_idx, test_idx in cv_split:
         y_train, y_test = labels[train_idx], labels[test_idx]
     
-        X_train = csp.fit_transform(epochs_train[train_idx], y_train)
-        X_test = csp.transform(epochs_train[test_idx])
-    
+        X_train = fbcsp.fit_transform(epochs_train[train_idx], y_train)
+        X_test = fbcsp.transform(epochs_train[test_idx])
+        
+        X_train_mne = csp.fit_transform(epochs_train[train_idx], y_train)
+        X_test_mne = csp.transform(epochs_train[test_idx])
         # fit classifier
         svm.fit(X_train, y_train)
-    
+        print(X_train.shape)
+        print(X_train_mne.shape)
         # running classifier: test classifier on sliding window
         score_this_window = []
         for n in w_start:
-            X_test = csp.transform(epochs_data[test_idx][:, :, n:(n + w_length)])
+            X_test = fbcsp.transform(epochs_data[test_idx][:, :, n:(n + w_length)])
             score_this_window.append(svm.score(X_test, y_test))
         scores_windows.append(score_this_window)
         
@@ -90,7 +98,7 @@ def plot_scores_over_time(w_start, w_length, cv_split, epochs, epochs_train, lab
     plt.legend(loc='lower right')
     plt.show()
 
-    
+"""
 def plot_csp(epochs, epochs_data, y) :
     
     # plot CSP patterns estimated on full data for visualization
@@ -98,7 +106,7 @@ def plot_csp(epochs, epochs_data, y) :
     
     layout = read_layout('EEG1005')
     csp.plot_patterns(epochs.info, layout=layout, ch_type='eeg',units='Patterns (AU)', size=1.5)
-
+"""
 
 
 
@@ -145,11 +153,34 @@ if __name__ == '__main__':
     # Classifier. Sci-kit's multi-class SVC uses one-versus-one approach, but we need one-versus-rest. Therefore LinearSVC is used.
     penalty='l2' #L2 norm is used for penalty
     svm = LinearSVC(penalty=penalty)
-    csp = CSP(n_components=4, reg=None, log=True, norm_trace=False)
+    csp = CSP()
+    fbcsp = FBCSP(filter_target='epoched', concatenate=False, avg_band=True)
+    fbcsp.fit(epochs_data_train, labels)
     
+    custom_csp_result = fbcsp.transform(epochs_data_train)
+    
+    
+    #theirresult = csp.fit_transform(epochs_data_train, labels)
+    
+    
+    #scores = cross_val_score(svm, epochs_data_train, labels, cv=cv, n_jobs=1, verbose=0)
+    
+    sfreq = raw.info['sfreq']
+    w_length = int(sfreq * 0.5)   # running classifier: window length
+    w_step = int(sfreq * 0.1)  # running classifier: window step size
+    w_start = np.arange(0, epochs_data.shape[2] - w_length, w_step)
+    
+    
+    #score over time
+    plot_scores_over_time(w_start, w_length, cv_split, epochs, epochs_data_train, labels, sfreq)
+    
+    #CSP
+    #plot_csp(epochs, epochs_data, labels)
+    
+    """
     # Sklearn Pipelines can be useful, if the same steps are always performed. In our case it will be pre-processing -> signal-processing -> filter-bank -> csp -> [feature-selection] -> classification.
     # Later it can potentially allow us to grid-search parameters for every step in a unified way.
-    clf = Pipeline([('CSPP', csp), ('SVM', svm)])
+    clf = Pipeline([('CSP', csp), ('SVM', svm)])
     
     scores = cross_val_score(clf, epochs_data_train, labels, cv=cv, n_jobs=1, verbose=0) #estimator, data to be fit, classes, cross validator, number of CPU's        
     
@@ -159,8 +190,7 @@ if __name__ == '__main__':
     w_length = int(sfreq * 0.5)   # running classifier: window length
     w_step = int(sfreq * 0.1)  # running classifier: window step size
     w_start = np.arange(0, epochs_data.shape[2] - w_length, w_step)
-    #CSP
-    plot_csp(epochs, epochs_data, labels)
+    
     
     #score over time
     plot_scores_over_time(w_start, w_length, cv_split, epochs, epochs_data_train, labels, sfreq)
@@ -171,3 +201,4 @@ if __name__ == '__main__':
     #For our sample size of 40 for two classes, an accuracy of at least 67.5% needs to be reached for a p-value below 0.01
     #according to: https://www.ncbi.nlm.nih.gov/pubmed/25596422  
     print("Classification accuracy: %f" % np.mean(scores))
+    """
