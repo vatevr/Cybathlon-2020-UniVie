@@ -45,7 +45,7 @@ def extract_amplitudes(input_signal):
 
 def main():
     print(WINDOW_SIZE, SAMPLING_RATE)
-    raw = mne.io.read_raw_brainvision('../data/20191104_Cybathlon_Test_1.vhdr')
+    raw = mne.io.read_raw_brainvision('../data/20191201_Cybathlon_TF_Session1_Block1.vhdr')
     t_idx = raw.time_as_index([100., 110.])
     data, times = raw[:, t_idx[0]:t_idx[1]]
     start = time.time()
