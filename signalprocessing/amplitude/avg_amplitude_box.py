@@ -10,8 +10,6 @@ class AmplitudeExtractionBox(OVBox):
     def frequency_spectrum(self, windowed_signal):
         return 10 * np.log10(np.absolute(np.fft.fft(windowed_signal)))
 
-        # pass whole spectrum for all channels to this function
-
     def avg_band_amplitude(self, spectrum, lower_limit, upper_limit):
         frequency_band = spectrum[:, int(lower_limit / self.freq_resolution):int(upper_limit / self.freq_resolution)]
         return np.mean(frequency_band, axis=1)
@@ -41,7 +39,7 @@ class AmplitudeExtractionBox(OVBox):
                                  'gamma': (30, 45)}
 
     def initialize(self):
-        self.sampling_rate = int(self.setting['Sampling frequency'])
+        self.sampling_rate = int(self.setting['Sampling rate'])
         self.freq_resolution = 1. / self.window_size
         self.window_function = scipy.signal.hann(M=int(self.window_size * self.sampling_rate), sym=False)
 
