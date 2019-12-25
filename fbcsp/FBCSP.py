@@ -129,6 +129,8 @@ class FBCSP :
         component_ind = component_ind[:k] #select first k components
         
         #pick and return CSP components from eigenvectors
+        #import pdb
+        #pdb.set_trace()
         return np.array([eig_vector[:, idx] for idx in component_ind]).T
     
         
@@ -305,7 +307,7 @@ class Preproc :
 
 if __name__ == '__main__':   
     #define parameters
-    EEG_DATA_FILEPATH = "..\\..\\..\\eeg-data\\data_set_IVa_aa_mat\\100Hz\\data_set_IVa_aa.mat" #filepath to the data
+    EEG_DATA_FILEPATH = "..\\..\\..\\data_set_IVa_aa_mat\\100Hz\\data_set_IVa_aa.mat" #filepath to the data
     #window_length = float(sys.argv[1]) #seconds. How long was the cue displayed? 
     #fs = int(sys.argv[2]) #Hz
     
@@ -333,4 +335,6 @@ if __name__ == '__main__':
     print('-----------------------------------------------------')
     csp3 = FBCSP(filter_target='epoched', concatenate = False)
     result_3 = csp3.fit_transform(X, label_class)
-    
+    print('-----------------------------------------------------')
+    csp4 = FBCSP(filter_target='epoched', avg_band=True)
+    result_4 = csp3.fit_transform(X, label_class)
