@@ -336,5 +336,5 @@ if __name__ == '__main__':
     csp3 = FBCSP(filter_target='epoched', concatenate = False)
     result_3 = csp3.fit_transform(X, label_class)
     print('-----------------------------------------------------')
-    csp4 = FBCSP(filter_target='epoched', avg_band=True)
-    result_4 = csp3.fit_transform(X, label_class)
+    csp4 = FBCSP(filter_target='epoched', concatenate=False, avg_band=True)
+    result_4 = csp4.fit_transform(X, label_class)
