@@ -63,7 +63,6 @@ class FBCSP :
         :param X : 4d numpy array time-domain data. Shape: band (optional) * epochs (optional) * channels * samples
         :param y : 1d numpy array of class labels
         """
-        
         if self.filter_target == 'epoched' and len(self.bands) == 1:
             filtered_data = [] 
             for epoch in range(X.shape[0]) :
