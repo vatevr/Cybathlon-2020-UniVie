@@ -1,11 +1,10 @@
-import numpy as np
 import sys
-import matplotlib.pyplot as plt
-from optparse import OptionParser
-from topomap_plot import plot_data_for_single_channel
 import time
-import scipy.signal
+
+import matplotlib.pyplot as plt
 import mne
+import numpy as np
+import scipy.signal
 
 brain_freq_bands = {
     'delta': (1, 4),
@@ -20,10 +19,18 @@ SAMPLING_RATE = int(sys.argv[2])
 FREQ_RESOLUTION = 1. / WINDOW_SIZE
 
 
-# pass whole spectrum for all channels to this function
-def avg_band_amplitude(spectrum, lower_limit, upper_limit):
-    frequency_band = spectrum[:, int(lower_limit / FREQ_RESOLUTION):int(upper_limit / FREQ_RESOLUTION)]
+def avg_band_amplitude(power, lower_limit, upper_limit):
+    frequency_band = power[:, lower_limit:upper_limit]
     return np.mean(frequency_band, axis=1)
+
+
+def extract_amplitudes(frequencies, power):
+    amplitudes = []
+    for wave, band_range in brain_freq_bands.items():
+        lower_index = next(index for index, value in enumerate(frequencies) if value > band_range[0])
+        upper_index = next(index for index, value in enumerate(frequencies) if value > band_range[1])
+        amplitudes.append(avg_band_amplitude(power, lower_index, upper_index))
+    return amplitudes
 
 
 def calculate_psd(input_signal):
@@ -36,16 +43,14 @@ def main():
     t_idx = raw.time_as_index([100., 110.])
     data, times = raw[:, t_idx[0]:t_idx[1]]
     start = time.time()
-    f, pxx_den = calculate_psd(data)
-    print(pxx_den)
-    plt.semilogy(f, pxx_den.T)
-    #plt.ylim([0.5e-3, 1])
-    plt.xlabel('frequency [Hz]')
-    plt.ylabel('PSD [V**2/Hz]')
+    frequencies, power = calculate_psd(data)
+    avg_amplitudes = extract_amplitudes(frequencies, power)
+
+    plt.semilogy(frequencies, power.T)
+    plt.xlabel('Frequency')
+    plt.ylabel('Power')
     plt.show()
     end = time.time()
-    # print(raw.info.ch_names)
-    # plot_data_for_single_channel(amplitudes[2], raw)
     print("elapsed time:", end - start)
 
 
