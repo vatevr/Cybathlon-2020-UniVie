@@ -16,10 +16,12 @@ brain_freq_bands = {
 
 SAMPLING_RATE = int(sys.argv[1])
 
+
 # Calculates an avg of the power within the given indexes
 def avg_band_amplitude(power, lower_limit_index, upper_limit_index):
     range = power[:, lower_limit_index:upper_limit_index]
     return np.mean(range, axis=1)
+
 
 # Returns for each brain wave bandwidth the average amplitude within that bandwidth for each electrode
 def extract_amplitudes(frequencies, power):
