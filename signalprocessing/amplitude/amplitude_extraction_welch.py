@@ -14,16 +14,14 @@ brain_freq_bands = {
     'gamma': (30, 45)
 }
 
-WINDOW_SIZE = float(sys.argv[1])
-SAMPLING_RATE = int(sys.argv[2])
-FREQ_RESOLUTION = 1. / WINDOW_SIZE
+SAMPLING_RATE = int(sys.argv[1])
 
+# Calculates an avg of the power within the given indexes
+def avg_band_amplitude(power, lower_limit_index, upper_limit_index):
+    range = power[:, lower_limit_index:upper_limit_index]
+    return np.mean(range, axis=1)
 
-def avg_band_amplitude(power, lower_limit, upper_limit):
-    frequency_band = power[:, lower_limit:upper_limit]
-    return np.mean(frequency_band, axis=1)
-
-
+# Returns for each brain wave bandwidth the average amplitude within that bandwidth for each electrode
 def extract_amplitudes(frequencies, power):
     amplitudes = []
     for wave, band_range in brain_freq_bands.items():
@@ -38,13 +36,12 @@ def calculate_psd(input_signal):
 
 
 def main():
-    print(WINDOW_SIZE, SAMPLING_RATE)
     raw = mne.io.read_raw_brainvision('../data/20191104_Cybathlon_Test_1.vhdr')
     t_idx = raw.time_as_index([100., 110.])
     data, times = raw[:, t_idx[0]:t_idx[1]]
     start = time.time()
     frequencies, power = calculate_psd(data)
-    avg_amplitudes = extract_amplitudes(frequencies, power)
+    amplitudes = extract_amplitudes(frequencies, power)
 
     plt.semilogy(frequencies, power.T)
     plt.xlabel('Frequency')

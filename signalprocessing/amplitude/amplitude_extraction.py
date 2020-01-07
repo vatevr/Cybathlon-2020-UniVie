@@ -30,10 +30,11 @@ def frequency_spectrum(windowed_signal):
 
 # pass whole spectrum for all channels to this function
 def avg_band_amplitude(spectrum, lower_limit, upper_limit):
+    # retrieve a frequency band across all channels, by using the scaling determined by the frequency resolution
     frequency_band = spectrum[:, int(lower_limit / FREQ_RESOLUTION):int(upper_limit / FREQ_RESOLUTION)]
     return np.mean(frequency_band, axis=1)
 
-
+# Returns for each brain wave bandwidth the average amplitude within that bandwidth for each electrode
 def extract_amplitudes(input_signal):
     windowed_signal = apply_window_function(input_signal, WINDOW_FUNCTION)
     spectrum = frequency_spectrum(windowed_signal)
@@ -49,7 +50,7 @@ def main():
     t_idx = raw.time_as_index([100., 110.])
     data, times = raw[:, t_idx[0]:t_idx[1]]
     start = time.time()
-    # amplitudes = extract_amplitudes(data)
+    amplitudes = extract_amplitudes(data)
     end = time.time()
     # print(raw.info.ch_names)
     # plot_data_for_single_channel(amplitudes[2], raw)
