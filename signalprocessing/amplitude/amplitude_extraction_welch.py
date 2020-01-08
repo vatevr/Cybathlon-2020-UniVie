@@ -1,6 +1,6 @@
 import sys
 import time
-
+from topomap_plot import plot_data_for_single_channel
 import matplotlib.pyplot as plt
 import mne
 import numpy as np
@@ -24,12 +24,14 @@ def avg_band_amplitude(power, lower_limit_index, upper_limit_index):
 
 
 # Returns for each brain wave bandwidth the average amplitude within that bandwidth for each electrode
-def extract_amplitudes(frequencies, power):
+def extract_amplitudes(data):
+    frequencies, power = calculate_psd(data)
+    rescaled_power = 10 * np.log10(power)
     amplitudes = []
     for wave, band_range in brain_freq_bands.items():
         lower_index = next(index for index, value in enumerate(frequencies) if value > band_range[0])
         upper_index = next(index for index, value in enumerate(frequencies) if value > band_range[1])
-        amplitudes.append(avg_band_amplitude(power, lower_index, upper_index))
+        amplitudes.append(avg_band_amplitude(rescaled_power, lower_index, upper_index))
     return amplitudes
 
 
@@ -38,18 +40,21 @@ def calculate_psd(input_signal):
 
 
 def main():
-    raw = mne.io.read_raw_brainvision('../data/20191104_Cybathlon_Test_1.vhdr')
+    raw = mne.io.read_raw_brainvision('../data/20191201_Cybathlon_TF_Session1_RS.vhdr', preload=True)
     t_idx = raw.time_as_index([100., 110.])
     data, times = raw[:, t_idx[0]:t_idx[1]]
     start = time.time()
-    frequencies, power = calculate_psd(data)
-    amplitudes = extract_amplitudes(frequencies, power)
-
-    plt.semilogy(frequencies, power.T)
-    plt.xlabel('Frequency')
-    plt.ylabel('Power')
-    plt.show()
+    amplitudes = extract_amplitudes(data)
     end = time.time()
+
+    # plt.semilogy(frequencies, power.T)
+    # plt.xlabel('Frequency')
+    # plt.ylabel('Power')
+    # plt.show()
+    #plt.plot(amplitudes[2])
+    # plt.show()
+    plot_data_for_single_channel(amplitudes[2], raw)
+
     print("elapsed time:", end - start)
 
 

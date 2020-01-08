@@ -1,10 +1,10 @@
 import numpy as np
 import sys
-from optparse import OptionParser
 from topomap_plot import plot_data_for_single_channel
 import time
 import scipy.signal
 import mne
+import matplotlib.pyplot as plt
 
 brain_freq_bands = {
     'delta': (1, 4),
@@ -46,14 +46,16 @@ def extract_amplitudes(input_signal):
 
 def main():
     print(WINDOW_SIZE, SAMPLING_RATE)
-    raw = mne.io.read_raw_brainvision('../data/20191201_Cybathlon_TF_Session1_Block1.vhdr')
+    raw = mne.io.read_raw_brainvision('../data/20191201_Cybathlon_TF_Session1_RS.vhdr', preload=True)
     t_idx = raw.time_as_index([100., 110.])
     data, times = raw[:, t_idx[0]:t_idx[1]]
     start = time.time()
     amplitudes = extract_amplitudes(data)
     end = time.time()
+    #plt.plot(amplitudes[2])
+    #plt.show()
     # print(raw.info.ch_names)
-    # plot_data_for_single_channel(amplitudes[2], raw)
+    plot_data_for_single_channel(amplitudes[2], raw)
     print("elapsed time:", end - start)
 
 

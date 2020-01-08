@@ -7,7 +7,7 @@ import mne
 def plot_data_for_single_channel(data_for_channel, raw):
     # Set montage (location of channels)
     raw.rename_channels({'O9': 'I1', 'O10': 'I2'})
-    montage = mne.channels.read_montage("standard_1005")
+    montage = mne.channels.make_standard_montage('standard_1005')
     raw.set_montage(montage)
     raw.rename_channels({'I1': 'O9', 'I2': 'O10'})
     # Remove bad channels from analysis
