@@ -63,18 +63,17 @@ def main():
     data = raw.get_data(picks, start=t_idx[0], stop=t_idx[1])
     pos = pos_from_raw(raw.info, picks)
 
-
     # Calculations
     start = time.time()
     amplitudes = extract_amplitudes(data)
     end = time.time()
+    print("elapsed time:", end - start)
 
     # Plotting
     # plt.plot(amplitudes[2])
     # plt.show()
     # print(raw.info.ch_names)
     plot_single_topomap(amplitudes[2], pos, title='', cmap_rb=True)
-    print("elapsed time:", end - start)
 
 
 if __name__ == "__main__":

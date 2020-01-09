@@ -1,7 +1,7 @@
 import sys
 import time
-from topomap_plot import plot_data_for_single_channel
-import matplotlib.pyplot as plt
+from topomap_plot import plot_single_topomap
+from mne.channels.layout import _auto_topomap_coords as pos_from_raw
 import mne
 import numpy as np
 import scipy.signal
@@ -40,22 +40,34 @@ def calculate_psd(input_signal):
 
 
 def main():
+    # Preprocessing and loading of data
     raw = mne.io.read_raw_brainvision('../data/20191201_Cybathlon_TF_Session1_RS.vhdr', preload=True)
+    raw.set_eeg_reference(ref_channels='average')
+    raw.rename_channels({'O9': 'I1', 'O10': 'I2'})
+    montage = mne.channels.make_standard_montage('standard_1005')
+    raw.set_montage(montage)
+    raw.rename_channels({'I1': 'O9', 'I2': 'O10'})
     t_idx = raw.time_as_index([100., 110.])
-    data, times = raw[:, t_idx[0]:t_idx[1]]
+    # Remove bad channels from analysis
+    raw.info['bads'] = ['F2', 'FFC2h', 'POO10h', 'O2']
+    picks = mne.pick_types(raw.info, eeg=True, stim=False, exclude='bads')
+    data = raw.get_data(picks, start=t_idx[0], stop=t_idx[1])
+    pos = pos_from_raw(raw.info, picks)
+
+    # Calculations
     start = time.time()
     amplitudes = extract_amplitudes(data)
     end = time.time()
+    print("elapsed time:", end - start)
 
+    # Plotting
     # plt.semilogy(frequencies, power.T)
     # plt.xlabel('Frequency')
     # plt.ylabel('Power')
     # plt.show()
-    #plt.plot(amplitudes[2])
+    # plt.plot(amplitudes[2])
     # plt.show()
-    plot_data_for_single_channel(amplitudes[2], raw)
-
-    print("elapsed time:", end - start)
+    plot_single_topomap(amplitudes[2], pos, title='', cmap_rb=True)
 
 
 if __name__ == "__main__":
