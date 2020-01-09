@@ -1,6 +1,7 @@
 import numpy as np
 import sys
-from topomap_plot import plot_data_for_single_channel
+from topomap_plot import plot_single_topomap
+from mne.channels.layout import _auto_topomap_coords as pos_from_raw
 import time
 import scipy.signal
 import mne
@@ -48,15 +49,20 @@ def extract_amplitudes(input_signal):
 def main():
     print(WINDOW_SIZE, SAMPLING_RATE)
 
-    # Preprocessing of data
+    # Preprocessing and loading of data
     raw = mne.io.read_raw_brainvision('../data/20191201_Cybathlon_TF_Session1_RS.vhdr', preload=True)
-    t_idx = raw.time_as_index([100., 110.])
     raw.set_eeg_reference(ref_channels='average')
+    raw.rename_channels({'O9': 'I1', 'O10': 'I2'})
+    montage = mne.channels.make_standard_montage('standard_1005')
+    raw.set_montage(montage)
+    raw.rename_channels({'I1': 'O9', 'I2': 'O10'})
+    t_idx = raw.time_as_index([100., 110.])
     # Remove bad channels from analysis
     raw.info['bads'] = ['F2', 'FFC2h', 'POO10h', 'O2']
     picks = mne.pick_types(raw.info, eeg=True, stim=False, exclude='bads')
-    # data, times = raw[:, t_idx[0]:t_idx[1]]
     data = raw.get_data(picks, start=t_idx[0], stop=t_idx[1])
+    pos = pos_from_raw(raw.info, picks)
+
 
     # Calculations
     start = time.time()
@@ -67,7 +73,7 @@ def main():
     # plt.plot(amplitudes[2])
     # plt.show()
     # print(raw.info.ch_names)
-    plot_data_for_single_channel(amplitudes[2], raw, picks)
+    plot_single_topomap(amplitudes[2], pos, title='', cmap_rb=True)
     print("elapsed time:", end - start)
 
 
