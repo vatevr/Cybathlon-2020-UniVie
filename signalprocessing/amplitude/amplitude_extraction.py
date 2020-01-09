@@ -34,6 +34,7 @@ def avg_band_amplitude(spectrum, lower_limit, upper_limit):
     frequency_band = spectrum[:, int(lower_limit / FREQ_RESOLUTION):int(upper_limit / FREQ_RESOLUTION)]
     return np.mean(frequency_band, axis=1)
 
+
 # Returns for each brain wave bandwidth the average amplitude within that bandwidth for each electrode
 def extract_amplitudes(input_signal):
     windowed_signal = apply_window_function(input_signal, WINDOW_FUNCTION)
@@ -46,16 +47,27 @@ def extract_amplitudes(input_signal):
 
 def main():
     print(WINDOW_SIZE, SAMPLING_RATE)
+
+    # Preprocessing of data
     raw = mne.io.read_raw_brainvision('../data/20191201_Cybathlon_TF_Session1_RS.vhdr', preload=True)
     t_idx = raw.time_as_index([100., 110.])
-    data, times = raw[:, t_idx[0]:t_idx[1]]
+    raw.set_eeg_reference(ref_channels='average')
+    # Remove bad channels from analysis
+    raw.info['bads'] = ['F2', 'FFC2h', 'POO10h', 'O2']
+    picks = mne.pick_types(raw.info, eeg=True, stim=False, exclude='bads')
+    # data, times = raw[:, t_idx[0]:t_idx[1]]
+    data = raw.get_data(picks, start=t_idx[0], stop=t_idx[1])
+
+    # Calculations
     start = time.time()
     amplitudes = extract_amplitudes(data)
     end = time.time()
-    #plt.plot(amplitudes[2])
-    #plt.show()
+
+    # Plotting
+    # plt.plot(amplitudes[2])
+    # plt.show()
     # print(raw.info.ch_names)
-    plot_data_for_single_channel(amplitudes[2], raw)
+    plot_data_for_single_channel(amplitudes[2], raw, picks)
     print("elapsed time:", end - start)
 
 

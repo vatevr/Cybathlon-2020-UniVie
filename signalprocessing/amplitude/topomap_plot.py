@@ -4,18 +4,18 @@ import matplotlib.pyplot as plt
 import mne
 
 
-def plot_data_for_single_channel(data_for_channel, raw):
+def plot_data_for_single_channel(data_for_channel, raw, picks):
+    # raw.set_eeg_reference(ref_channels='average')
     # Set montage (location of channels)
     raw.rename_channels({'O9': 'I1', 'O10': 'I2'})
     montage = mne.channels.make_standard_montage('standard_1005')
     raw.set_montage(montage)
     raw.rename_channels({'I1': 'O9', 'I2': 'O10'})
     # Remove bad channels from analysis
-    raw.info['bads'] = ['F2', 'FFC2h', 'POO10h', 'O2']
-    raw.set_eeg_reference(ref_channels='average')
-    picks = mne.pick_types(raw.info, eeg=True, stim=False, exclude='bads')
+    #raw.info['bads'] = ['F2', 'FFC2h', 'POO10h', 'O2']
+    #picks = mne.pick_types(raw.info, eeg=True, stim=False, exclude='bads')
     pos = pos_from_raw(raw.info, picks)
-    plot_single_topomap(data_for_channel, pos, title='', cmap_rb=True)
+    plot_single_topomap(picks, pos, title='', cmap_rb=True)
 
 
 def plot_single_topomap(data, pos, vmin=None, vmax=None, title=None, cmap_rb=False):
