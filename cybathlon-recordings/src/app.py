@@ -211,6 +211,8 @@ def verify_connection():
 
 
 def main(args=None):
+    bind_to = {'hostname': "0.0.0.0", 'port': 9888}
+
     app.run(port=9888, host='0.0.0.0', debug=True)
 
 
