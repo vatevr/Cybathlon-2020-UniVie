@@ -2,6 +2,7 @@ version: '3.7'
 
 services:
   db:
+    container_name: postgres
     image: postgres:10.1-alpine
     restart: always
     ports:
@@ -9,18 +10,22 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: docker
+    networks:
+      - cybathlon
     volumes:
       - postgres_data:/var/lib/postgresql/data/
-  web:
+  server:
     build: ./
     environment:
       TEST: test_value
       DBUSER: postgres
       DBPASSWORD: docker
-      DBHOST: localhost
+      DBHOST: postgres
       DBPORT: 5434
     volumes:
       - .:/src
+    networks:
+      - cybathlon
     ports:
       - 9888:9888
     depends_on:

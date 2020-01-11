@@ -1,6 +1,7 @@
 CREATE TABLE eeg_recordings (
     id UUID PRIMARY KEY,
     recording_file BYTEA NOT NULL
+    filename VARCHAR(60) NOT NULL
 );
 
 CREATE TABLE eeg_recording_metadata
