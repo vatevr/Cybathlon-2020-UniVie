@@ -1,11 +1,10 @@
-import numpy as np
 import sys
+import time
 from topomap_plot import plot_single_topomap
 from mne.channels.layout import _auto_topomap_coords as pos_from_raw
-import time
-import scipy.signal
 import mne
-import matplotlib.pyplot as plt
+import numpy as np
+import scipy.signal
 
 brain_freq_bands = {
     'delta': (1, 4),
@@ -15,40 +14,24 @@ brain_freq_bands = {
     'gamma': (30, 45)
 }
 
-WINDOW_SIZE = float(sys.argv[1])
-SAMPLING_RATE = int(sys.argv[2])
-FREQ_RESOLUTION = 1. / WINDOW_SIZE
-WINDOW_FUNCTION = scipy.signal.hann(M=int(WINDOW_SIZE * SAMPLING_RATE), sym=False)
-
-
-def apply_window_function(signal, window_function):
-    return signal * window_function
-
-
-def frequency_spectrum(windowed_signal):
-    return 10 * np.log10(np.absolute(np.fft.fft(windowed_signal)))
-
-
-# pass whole spectrum for all channels to this function
-def avg_band_amplitude(spectrum, lower_limit, upper_limit):
-    # retrieve a frequency band across all channels, by using the scaling determined by the frequency resolution
-    frequency_band = spectrum[:, int(lower_limit / FREQ_RESOLUTION):int(upper_limit / FREQ_RESOLUTION)]
-    return np.mean(frequency_band, axis=1)
+# Calculates an avg of the power within the given indexes
+def avg_band_amplitude(power, lower_limit_index, upper_limit_index):
+    range = power[:, lower_limit_index:upper_limit_index]
+    return np.mean(range, axis=1)
 
 
 # Returns for each brain wave bandwidth the average amplitude within that bandwidth for each electrode
-def extract_amplitudes(input_signal):
-    windowed_signal = apply_window_function(input_signal, WINDOW_FUNCTION)
-    spectrum = frequency_spectrum(windowed_signal)
+def extract_amplitudes(power, frequencies):
+    rescaled_power = 10 * np.log10(power)
     amplitudes = []
     for wave, band_range in brain_freq_bands.items():
-        amplitudes.append(avg_band_amplitude(spectrum, band_range[0], band_range[1]))
+        lower_index = next(index for index, value in enumerate(frequencies) if value > band_range[0])
+        upper_index = next(index for index, value in enumerate(frequencies) if value > band_range[1])
+        amplitudes.append(avg_band_amplitude(rescaled_power, lower_index, upper_index))
     return amplitudes
 
 
 def main():
-    print(WINDOW_SIZE, SAMPLING_RATE)
-
     # Preprocessing and loading of data
     raw = mne.io.read_raw_brainvision('../data/20191201_Cybathlon_TF_Session1_RS.vhdr', preload=True)
     raw.set_eeg_reference(ref_channels='average')
@@ -60,19 +43,22 @@ def main():
     # Remove bad channels from analysis
     raw.info['bads'] = ['F2', 'FFC2h', 'POO10h', 'O2']
     picks = mne.pick_types(raw.info, eeg=True, stim=False, exclude='bads')
-    data = raw.get_data(picks, start=t_idx[0], stop=t_idx[1])
     pos = pos_from_raw(raw.info, picks)
 
     # Calculations
     start = time.time()
-    amplitudes = extract_amplitudes(data)
+    power, frequencies = mne.time_frequency.psd_multitaper(inst=raw, tmin=100, tmax=110, picks=picks)
+    amplitudes = extract_amplitudes(power, frequencies)
     end = time.time()
     print("elapsed time:", end - start)
 
     # Plotting
+    # plt.semilogy(frequencies, power.T)
+    # plt.xlabel('Frequency')
+    # plt.ylabel('Power')
+    # plt.show()
     # plt.plot(amplitudes[2])
     # plt.show()
-    # print(raw.info.ch_names)
     #plot_single_topomap(amplitudes[2], pos, title='', cmap_rb=True)
 
 

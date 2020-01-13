@@ -67,7 +67,7 @@ def main():
     # plt.show()
     # plt.plot(amplitudes[2])
     # plt.show()
-    plot_single_topomap(amplitudes[2], pos, title='', cmap_rb=True)
+    # plot_single_topomap(amplitudes[2], pos, title='', cmap_rb=True)
 
 
 if __name__ == "__main__":
