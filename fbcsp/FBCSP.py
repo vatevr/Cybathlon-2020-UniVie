@@ -61,12 +61,11 @@ class FBCSP :
     def transform(self, X) :
         """
         :param X : 4d numpy array time-domain data. Shape: band (optional) * epochs (optional) * channels * samples
-        :param y : 1d numpy array of class labels
         """
         if self.filter_target == 'epoched' and len(self.bands) == 1:
             filtered_data = [] 
             for epoch in range(X.shape[0]) :
-                filtered_data.append(np.dot(self.filters_.T, X[epoch, :, :]))     
+                filtered_data.append(np.dot(self.filters_.T, X[epoch, :, :])) 
             filtered_data = np.array(filtered_data)
             if self.concatenate == True :
                 filtered_data = self.concatenate_result(filtered_data)
@@ -120,6 +119,7 @@ class FBCSP :
         avg_1 = np.mean(cov_1, axis=0)
         avg_2 = np.mean(cov_2, axis=0)
         
+        
         #compute eigenvalues and eigenvectors
         eig_value, eig_vector = eigh(avg_1, avg_2)
         
@@ -162,12 +162,12 @@ class FBCSP :
     
     def average_band_amplitude(self, X) :
         """
-        :param X : numpy array of epoched eeg data. Shape: epochs * channels * samples
+        :param X : numpy array of epoched eeg data. Shape: epochs * channels/components * samples
         """
         bandavg = np.zeros((X.shape[0], 4, X.shape[1]))
-        
         for epoch in range(X.shape[0]) :
             bandavg[epoch] = (sp.extract_amplitudes(X[epoch,:,:]))
+
         
         X = bandavg.reshape(bandavg.shape[0], -1)
         return X
@@ -193,9 +193,8 @@ class FBCSP :
                 """
                 
                 #extract classes
-                class_1 = np.array([X[epoch, :, :] for epoch in range((y == classarr[0]).sum()) if y[epoch] == classarr[0]])
-                class_2 = np.array([X[epoch, :, :] for epoch in range((y == classarr[1]).sum()) if y[epoch] == classarr[1]])
-            
+                class_1 = np.array([X[epoch, :, :] for epoch in range(len(y)) if y[epoch] == classarr[0]])
+                class_2 = np.array([X[epoch, :, :] for epoch in range(len(y)) if y[epoch] == classarr[1]])
                 return class_1, class_2
             
             #Multi-class case
@@ -325,6 +324,16 @@ if __name__ == '__main__':
     X = p.preproc(raw_data, label_pos)
     
     csp = FBCSP(filter_target='raw')
+    X_1, X_2 = csp.separate_classes(X, label_class)
+    
+    X = np.concatenate((X_1, X_2))
+    classarr = np.unique(label_class)               
+    y_1 = np.array([label_class[epoch] for epoch in range(len(label_class)) if label_class[epoch] == classarr[0]])
+    y_2 = np.array([label_class[epoch] for epoch in range(len(label_class)) if label_class[epoch] == classarr[1]])
+    y = np.concatenate((y_1, y_2))
+    
+    
+    csp = FBCSP(filter_target='raw')
     print('-----------------------------------------------------')
     csp.fit(X, label_class)
     result_1 = csp.transform(raw_data)
@@ -337,3 +346,64 @@ if __name__ == '__main__':
     print('-----------------------------------------------------')
     csp4 = FBCSP(filter_target='epoched', concatenate=False, avg_band=True)
     result_4 = csp4.fit_transform(X, label_class)
+    
+    from sklearn.svm import LinearSVC
+    from sklearn.model_selection import RepeatedKFold, learning_curve #various algorithms to cross validate and evaluate. Maybe RepeatedKFold as well? 
+    from sklearn.pipeline import Pipeline
+    from sklearn.utils import shuffle
+    import matplotlib.pyplot as plt
+    from mne.decoding import CSP
+    
+    fbcsp = FBCSP(filter_target='epoched', concatenate=False, avg_band=True)
+    csp = CSP()
+    svm = LinearSVC()
+    X, y = shuffle(X, y)
+    
+    fbpipe = Pipeline([('CSP', fbcsp), ('SVM', svm)])
+    csppipe = Pipeline([('CSP', csp), ('SVM', svm)])
+    
+    cv = RepeatedKFold(10, 5) # repeated Kfold. Number_of_folds x Number_of_Repetitions
+    
+    train_sizesfb, train_scoresfb, test_scoresfb = learning_curve(fbpipe, X, y, cv=cv, verbose=0)
+    train_sizescsp, train_scorescsp, test_scorescsp = learning_curve(csppipe, X, y, cv=cv, verbose=0)
+    
+    #mean and standard deviation for train scores for FBCSP
+    train_scores_meanfb = np.mean(train_scoresfb, axis=1)
+    train_scores_stdfb = np.std(train_scoresfb, axis=1)
+    
+    #mean and standard deviation for test scores for MNE CSP
+    test_scores_meancsp = np.mean(test_scorescsp, axis=1)
+    test_scores_stdcsp = np.std(test_scorescsp, axis=1)
+    
+    #mean and standard deviation for train scores for MNE CSP
+    train_scores_meancsp = np.mean(train_scorescsp, axis=1)
+    train_scores_stdcsp = np.std(train_scorescsp, axis=1)
+    
+    #mean and standard deviation for test scores for FBCSP
+    test_scores_meanfb = np.mean(test_scoresfb, axis=1)
+    test_scores_stdfb = np.std(test_scoresfb, axis=1)
+    
+    #plot learning curve
+    
+    # Draw lines
+    plt.plot(train_sizesfb, train_scores_meanfb, '--', color="#ff0000",  label="Training score with FBCSP")
+    plt.plot(train_sizesfb, test_scores_meanfb, color="#0000ff", label="Cross-validation score with FBCSP")
+    
+    # Draw bands
+    plt.fill_between(train_sizesfb, train_scores_meanfb - train_scores_stdfb, train_scores_meanfb + train_scores_stdfb, color="#DDDDDD")
+    plt.fill_between(train_sizesfb, test_scores_meanfb - test_scores_stdfb, test_scores_meanfb + test_scores_stdfb, color="#DDDDDD")
+    
+    # Draw lines
+    plt.plot(train_sizescsp, train_scores_meancsp, '--', color="#00ffff",  label="Training score with MNE CSP")
+    plt.plot(train_sizescsp, test_scores_meancsp, color="#000000", label="Cross-validation score with MNE CSP")
+    
+    # Draw bands
+    plt.fill_between(train_sizescsp, train_scores_meancsp - train_scores_stdcsp, train_scores_meancsp + train_scores_stdcsp, color="#DDDDDD")
+    plt.fill_between(train_sizescsp, test_scores_meancsp - test_scores_stdcsp, test_scores_meancsp + test_scores_stdcsp, color="#DDDDDD")
+    
+    
+    # Create plot
+    plt.title("Learning Curve")
+    plt.xlabel("Training Set Size"), plt.ylabel("Cross Validation Accuracy Score"), plt.legend(loc="best")
+    #plt.tight_layout()
+    plt.show()
