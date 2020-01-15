@@ -1,0 +1,36 @@
+version: '3.7'
+
+services:
+  db:
+    image: postgres:10.1-alpine
+    restart: always
+    ports:
+      - 5434:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: docker
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+  web:
+    build: ./
+    environment:
+      TEST: test_value
+      DBUSER: postgres
+      DBPASSWORD: docker
+      DBHOST: localhost
+      DBPORT: 5434
+    volumes:
+      - .:/src
+    ports:
+      - 9888:9888
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
+
+networks:
+  cybathlon:
+    driver: bridge
+
+
