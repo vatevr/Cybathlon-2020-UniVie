@@ -116,6 +116,11 @@ def api_error(message):
 
 @app.route('/api/record', methods=['POST'])
 def upload_recording():
+    """
+    accepts file uploads to server. maximum limit of the file imposed by postgresql is 1GB
+    operation is transactional
+    :return: success response after the succssful upload, internal server error after failure
+    """
     if 'file' not in request.files:
         return Response(json.dumps({'message': 'internal server error!'}), status=500)
 
@@ -129,12 +134,13 @@ def upload_recording():
         print(str(recording.id))
     except:
         session.rollback()
-        print("couldn't save the file:", sys.exc_info()[0])
+        logging.exception('')
+        api_error("couldn't save the file")
         raise
     finally:
         session.close()
 
-    return Response(json.dumps({'id': str(recording.id), 'message': 'upload successfull'}))
+    return Response(json.dumps({'id': str(recording.id), 'filename': file.filename, 'message': 'upload successfull'}))
 
 
 @app.route('/api/record/<recording_id>', methods=['GET'])
