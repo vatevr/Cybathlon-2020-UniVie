@@ -139,16 +139,16 @@ def upload_recording():
 
 @app.route('/api/record/<recording_id>', methods=['GET'])
 def download_recording(recording_id):
-    if not find_recording(recording_id):
-        return api_error(f'file with id {recording_id} was not found')
+    # if not find_recording(recording_id):
+    #     return api_error(f'file with id {recording_id} was not found')
 
     recording: EEGRecording = session \
         .query(EEGRecording) \
         .filter(EEGRecording.id == uuid.UUID(recording_id)) \
         .first()
 
-    return Response(recording.recording_file, headers={"Content-disposition":
-                                                           "attachment; filename=" + recording.filename})
+    return api_error(f'file {recording_id} could not be found') if recording is None \
+        else Response(recording.recording_file, headers={"Content-disposition": "attachment; filename=" + recording.filename})
 
 
 @app.route('/api/label/<recording_id>', methods=['POST'])

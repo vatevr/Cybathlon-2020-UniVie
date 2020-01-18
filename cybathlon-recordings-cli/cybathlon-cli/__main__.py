@@ -1,4 +1,5 @@
 import json
+import re
 import sys
 
 import fire
@@ -27,12 +28,29 @@ class Client(requests.Session):
                 if response.status_code != 200:
                     print("Error:", res["detail"], file=sys.stderr)
                     sys.exit(1)
-            except ValueError:  
+            except ValueError:
                 print(response.text)
                 sys.exit(1)
             return res
 
         return wrapper
+
+
+class HttpUtils:
+    @staticmethod
+    def get_filename_from_cd(headers: dict):
+        """
+        retrieve filename from content-disposition http header
+        """
+
+        cd = headers.get('content-disposition')
+
+        if not cd:
+            return None
+        filename = re.findall('filename=(.+)', cd)
+        if len(filename) == 0:
+            return None
+        return filename[0]
 
 
 class RecordingsApi:
@@ -67,7 +85,7 @@ class RecordingsApi:
         file = open(filepath, 'rb')
 
         files = {'file': file}
-        response = requests.post(self._base + '/record', files = files)
+        response = requests.post(self._base + '/record', files=files)
 
         print(f'uploading a recording status code {response.status_code}')
 
@@ -78,6 +96,16 @@ class RecordingsApi:
             self._last_id = response.json()['id']
             self.__output(response.json())
             print(f'uploaded file with id {self._last_id}')
+
+    def download(self, file_id):
+        response = requests.get(f'{self._base}/record/{file_id}')
+
+        if response.status_code > 200:
+            print('file could not be retrieved, check if the id is correct')
+        else:
+            filename = HttpUtils.get_filename_from_cd(response.headers)
+            open(f'../downloads/{filename}', 'wb').write(response.content)
+            print(f'file {filename} was successfully downloaded to downloads folder')
 
     def label(self, subject, paradigm, recorded_by, with_feedback, comment=None, file_id=None):
         file_id = file_id if file_id is not None else self._last_id
@@ -113,7 +141,6 @@ class RecordingsApi:
         if response.status_code == 200:
             print(f'files successfully retrieved')
             self.__output(response.json())
-
 
 
 def main():
