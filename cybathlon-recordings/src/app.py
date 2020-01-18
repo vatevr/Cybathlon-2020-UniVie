@@ -17,6 +17,8 @@ dbpassword = os.environ.get('DBPASSWORD', 'docker')
 dbhost = os.environ.get('DBHOST', '0.0.0.0')
 dbport = os.environ.get('DBPORT', '5432')
 
+print(f'postgres environment {dbhost}:{dbport}')
+
 if not os.environ.get('TEST'):
     warnings.warn('TEST environment variable not found.')
 
@@ -134,13 +136,17 @@ def mark_metadata(recording_id):
 
     content = request.json
 
+    recording_uuid = uuid.UUID(recording_id)
+
     metadata = EEGRecordingMetadata(int(content['subject_id']),
                                     int(content['paradigm_id']),
                                     datetime.datetime.now(),
                                     str(content['comment']),
                                     str(content['recorded_by']),
                                     bool(content['with_feedback']),
-                                    uuid.UUID(recording_id))
+                                    recording_uuid)
+
+    session.query(EEGRecordingMetadata).filter(EEGRecordingMetadata.recording == recording_uuid).delete()
 
     session.add(metadata)
     session.commit()
@@ -153,13 +159,6 @@ def mark_metadata(recording_id):
 
 @app.route('/api/recordings', methods=['GET'])
 def find_recordings():
-    query_params = {key: int(request.args.get(key))
-                    for key in ['subject_id', 'paradigm_id']
-                    if request.args.get(key) is not None}
-
-    if 'recorded_by' in request.args:
-        query_params['recorded_by'] = request.args.get('recorded_by')
-
     query = session.query(EEGRecordingMetadata)
 
     if request.args.get('subject_id'):
@@ -184,16 +183,9 @@ def find_recordings():
 
 @app.route('/api/verify', methods=['GET'])
 def verify_connection():
-    user = 'postgres'
-    password = 'docker'
-    host = request.args.get('host')
-    port = request.args.get('port')
-
-    verify_engine = create_engine(f'postgresql://{user}:{password}@{host}:{port}/postgres')
+    connection_str = 'postgresql://' + dbuser + ':' + dbpassword + '@' + dbhost + ':' + dbport + '/postgres'
+    verify_engine = create_engine(connection_str)
     engine_connection = verify_engine.connect()
-
-    print(verify_engine)
-    print(engine_connection)
 
     # Create a metadata instance
     metadata = MetaData(verify_engine)
@@ -201,12 +193,14 @@ def verify_connection():
     table = db.Table('Example', metadata,
                   db.Column('id', db.Integer, primary_key=True),
                   db.Column('name', db.String))
+
     # Create all tables
     metadata.create_all()
     tables = []
     for _t in metadata.tables:
         tables.append(_t)
 
+    engine_connection.close()
     return Response(json.dumps(tables), mimetype='application/json')
 
 

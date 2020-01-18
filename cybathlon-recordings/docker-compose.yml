@@ -14,8 +14,11 @@ services:
       - cybathlon
     volumes:
       - postgres_data:/var/lib/postgresql/data/
+
   server:
-    build: ./
+    build:
+      dockerfile: ./Dockerfile
+      context: ./
     environment:
       TEST: test_value
       DBUSER: postgres
