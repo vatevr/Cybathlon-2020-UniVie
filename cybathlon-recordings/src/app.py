@@ -1,6 +1,7 @@
 import datetime
 import json
 import os
+import sys
 import uuid
 import warnings
 
@@ -105,12 +106,18 @@ def upload_recording():
 
     file = request.files['file']
     recording = EEGRecording(recording_file=file.read(), filename=file.filename)
-    session.add(recording)
-    session.commit()
 
-    session.refresh(recording)
-
-    print(str(recording.id))
+    try:
+        session.add(recording)
+        session.commit()
+        session.refresh(recording)
+        print(str(recording.id))
+    except:
+        session.rollback()
+        print("couldn't save the file:", sys.exc_info()[0])
+        raise
+    finally:
+        session.close()
 
     return Response(json.dumps({'id': str(recording.id), 'message': 'upload successfull'}))
 
