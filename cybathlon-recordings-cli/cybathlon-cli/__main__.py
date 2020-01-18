@@ -1,14 +1,13 @@
 import json
+import sys
+
 import fire
 import requests
 from fire.core import FireError
-from future.moves import sys
 from tabulate import tabulate
 
 
 class Client(requests.Session):
-    base: str
-
     def __init__(self, base: str):
         self.base = base
         super(Client, self).__init__()
@@ -34,6 +33,7 @@ class Client(requests.Session):
             return res
 
         return wrapper
+
 
 class RecordingsApi:
     def __init__(self):
