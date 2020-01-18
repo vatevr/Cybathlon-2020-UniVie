@@ -28,7 +28,7 @@ class PeakFrequency:
         else:
             self.bands = bands
 
-    def do(self, x):
+    def fit(self, x):
         x = np.asarray(x)
         if x.shape[0] != self.samples and x.shape[1] != self.channels:
             raise ValueError("configs (", self.channels, ",", self.samples, ") do not match input dims ", x.shape)
