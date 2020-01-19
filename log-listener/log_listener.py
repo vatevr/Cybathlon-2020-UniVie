@@ -1,5 +1,6 @@
 import os
 import shutil
+import parallel
 import constants
 from controller import Controller
 from datetime import datetime, timedelta
@@ -19,6 +20,7 @@ class LogListener(FileSystemEventHandler):
         self.general_logs_file = open(f"{self.folder_path}/general_logs", "w")
         self.player_logs_file = open(f"{self.folder_path}/player_logs", "w")
         self.src_path = ""
+        self.eeg_amp = parallel.Parallel()
 
         if self.ai_turned_on == True:
             self.enemy_tags = constants.PLAYERS_TAGS
@@ -29,9 +31,9 @@ class LogListener(FileSystemEventHandler):
                 self.enemy_tags[2]: [],
             }
             self.enemy_controllers = {
-                self.enemy_tags[0]: Controller(self.enemy_tags[0], track_length, f_e_d, self.folder_path),
-                self.enemy_tags[1]: Controller(self.enemy_tags[1], track_length, s_e_d, self.folder_path),
-                self.enemy_tags[2]: Controller(self.enemy_tags[2], track_length, t_e_d, self.folder_path),
+                self.enemy_tags[0]: Controller(self.enemy_tags[0], track_length, f_e_d, self.folder_path, self.eeg_amp),
+                self.enemy_tags[1]: Controller(self.enemy_tags[1], track_length, s_e_d, self.folder_path, self.eeg_amp),
+                self.enemy_tags[2]: Controller(self.enemy_tags[2], track_length, t_e_d, self.folder_path, self.eeg_amp),
             }
 
     def __del__(self):
@@ -46,14 +48,29 @@ class LogListener(FileSystemEventHandler):
 
     def __general_logs(self, line):
         if 'start race' in line and line not in self.general_logs:
+            self.eeg_amp.setData(90)
             print(f'Line: {line}', end='')
             print('race started!', end='\n\n')
             self.general_logs.append(line)
-        elif 'puase race' in line and line not in self.general_logs:
+        elif 'pause race' in line and line not in self.general_logs:
+            self.eeg_amp.setData(91)
             print(f'Line: {line}', end='')
             print('race paused!', end='\n\n')
             self.general_logs.append(line)
+        elif 'resume paused race' in line and line not in self.general_logs:
+            self.eeg_amp.setData(92)
+            print(f'Line: {line}', end='')
+            print('race unpaused!', end='\n\n')
+            self.general_logs.append(line)
         elif 'finish' in line and line not in self.general_logs:
+            if self.player_tag in line:
+                self.eeg_amp.setData(15)
+            elif self.enemy_tags[0] in line:
+                self.eeg_amp.setData(25)
+            elif self.enemy_tags[1] in line:
+                self.eeg_amp.setData(35)
+            elif self.enemy_tags[2] in line:
+                self.eeg_amp.setData(45)
             print(line)
             self.general_logs.append(line)
 
@@ -65,12 +82,18 @@ class LogListener(FileSystemEventHandler):
                     print(f'Line: {line}', end='')
                     if 'leftWinker' in line:
                         print(f'{self.player_tag} needs to send move: left', end='\n\n')
+                        self.eeg_amp.setData(11)
                         pass
                     elif 'headlight' in line:
                         print(f'{self.player_tag} needs to send move: headlights', end='\n\n')
+                        self.eeg_amp.setData(12)
                         pass
                     elif 'rightWinker' in line:
                         print(f'{self.player_tag} needs to send move: right', end='\n\n')
+                        self.eeg_amp.setData(13)
+                        pass
+                    elif 'none' in line:
+                        self.eeg_amp.setData(14)
                         pass
 
     def process_enemy_logs (self, enemy_tag, line):

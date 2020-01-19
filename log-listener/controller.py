@@ -1,21 +1,26 @@
 import time
 import random
+import parallel
 import constants
 import numpy as np
 from connection import sendMove
 
 class Controller:
-    def __init__(self, player_tag, track_length, difficulty, folder_path):
+    def __init__(self, player_tag, track_length, difficulty, folder_path, eeg_amp):
         self.player_tag = player_tag
 
         if player_tag == 'p1':
             self.moves = constants.P1_MOVES
+            self.eeg = constants.P1_EEG
         elif player_tag == 'p2':
             self.moves = constants.P2_MOVES
+            self.eeg = constants.P2_EEG
         elif player_tag == 'p3':
             self.moves = constants.P3_MOVES
-        elif player_tag == 'p4':
+            self.eeg = constants.P3_EEG
+        else:
             self.moves = constants.P4_MOVES
+            self.eeg = constants.P4_EEG
 
         self.track_length = track_length
         self.difficulty = float(difficulty)
@@ -29,6 +34,7 @@ class Controller:
         print(f'{self.track}')
         self.enemy_logs = []
         self.enemy_logs_file = open(f"{folder_path}/enemy_{self.player_tag}_log", "w")
+        self.eeg_amp = eeg_amp
 
     def __del__(self):
         for line in self.enemy_logs:
@@ -37,18 +43,22 @@ class Controller:
 
     def __send_right_move(self, line):
         if 'leftWinker' in line:
+            self.eeg_amp.setData(self.eeg['leftWinker'])
             sendMove(self.moves['leftWinker'])
             self.enemy_logs.append(f'{self.player_tag} sent move: left \n\n')
             print(f'{self.player_tag} sent move: left', end='\n\n')
         elif 'headlight' in line:
+            self.eeg_amp.setData(self.eeg['headlight'])
             sendMove(self.moves['headlight'])
             self.enemy_logs.append(f'{self.player_tag} sent move: headlight \n\n')
             print(f'{self.player_tag} sent move: headlight', end='\n\n')
         elif 'rightWinker' in line:
+            self.eeg_amp.setData(self.eeg['rightWinker'])
             sendMove(self.moves['rightWinker'])
             self.enemy_logs.append(f'{self.player_tag} sent move: right \n\n')
             print(f'{self.player_tag} sent move: right', end='\n\n')
         else:
+            self.eeg_amp.setData(self.eeg['none'])
             self.enemy_logs.append(f'{self.player_tag} did not send any move \n\n')
             print(f'{self.player_tag} did not send any move', end='\n\n')
 
