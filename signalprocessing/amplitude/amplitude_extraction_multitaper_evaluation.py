@@ -43,7 +43,7 @@ def main():
     # Subject 2
     raw_s2 = mne.io.Raw('../data/S2_4chns.raw', preload=True)
     events_from_annot, event_dict = mne.events_from_annotations(raw_s2)
-    epochs_s2 = mne.Epochs(raw=raw_s2, events=events_from_annot, event_id=10)
+    epochs_s2 = mne.Epochs(raw=raw_s2, events=events_from_annot, event_id=20)
 
     avg_amplitudes_per_epoch_s2 = []
     for i in range(len(epochs_s2.events)):
@@ -58,7 +58,6 @@ def main():
     result_s2 = np.array(avg_amplitudes_per_epoch_s2)
     result_s4 = np.array(avg_amplitudes_per_epoch_s4)
 
-
     # Correlate all of the events, and each band from one subject with the same one from the other, with each channel with the same one
     corr = []
     '''for band in range(5):
@@ -70,7 +69,8 @@ def main():
             corr1 = []
             for band2 in range(5):
                 for channel2 in range(4):
-                    corr1.append(np.corrcoef(x=result_s2[:, band1, channel1], y=result_s4[:, band2, channel2])[0][1])
+                    corr1.append((np.corrcoef(x=result_s2[:, band1, channel1], y=result_s2[:, band2, channel2])[0][
+                                      1] ** 2) * 100)
             corr.append(corr1)
 
     ax = sea.heatmap(
@@ -80,7 +80,7 @@ def main():
         square=True
     )
 
-    plt.show()
+    plt.savefig('eval.png')
 
 
 if __name__ == "__main__":

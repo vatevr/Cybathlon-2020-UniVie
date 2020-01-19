@@ -43,12 +43,12 @@ def main():
     # Subject 4
     raw_s4 = mne.io.Raw('../data/S4_4chns.raw', preload=True)
     events_from_annot, event_dict = mne.events_from_annotations(raw_s4)
-    epochs_s4 = mne.Epochs(raw=raw_s4, events=events_from_annot, event_id=20)
+    epochs_s4 = mne.Epochs(raw=raw_s4, events=events_from_annot, event_id=10)
 
     # Subject 2
     raw_s2 = mne.io.Raw('../data/S2_4chns.raw', preload=True)
     events_from_annot, event_dict = mne.events_from_annotations(raw_s2)
-    epochs_s2 = mne.Epochs(raw=raw_s2, events=events_from_annot, event_id=20)
+    epochs_s2 = mne.Epochs(raw=raw_s2, events=events_from_annot, event_id=10)
 
     sampling_rate = 500.
 

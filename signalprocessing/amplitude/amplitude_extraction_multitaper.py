@@ -5,6 +5,7 @@ from mne.channels.layout import _auto_topomap_coords as pos_from_raw
 import mne
 import numpy as np
 import scipy.signal
+import matplotlib.pyplot as plt
 
 brain_freq_bands = {
     'delta': (1, 4),
