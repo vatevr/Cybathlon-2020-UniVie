@@ -1,9 +1,5 @@
-import os
-import sys
 import json
 import time
-import shutil
-import constants
 from log_listener import LogListener
 from configparser import ConfigParser
 from watchdog.observers import Observer
@@ -44,6 +40,4 @@ if __name__ == "__main__":
             time.sleep(1)
     except KeyboardInterrupt:
         observer.stop()
-        shutil.rmtree(path + '/log')
-        os.mkdir(path + '/log')
     observer.join()
