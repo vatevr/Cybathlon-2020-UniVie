@@ -1,12 +1,4 @@
-DEFAULT_PATH = '/home/maley/Desktop/BrainDriverServer'
-
-DEFAULT_PLAYER_TAG = 'p1'
-
-DEFAULT_FIRST_ENEMY_DIFFICULTY = 0.5
-
-DEFAULT_SECOND_ENEMY_DIFFICULTY = 0.7
-
-DEFAULT_THIRD_ENEMY_DIFFICULTY = 0.9
+PLAYERS_TAGS = ['p1', 'p2', 'p3', 'p4']
 
 P1_MOVES = {
     'leftWinker': b'\x0B',
@@ -31,5 +23,3 @@ P4_MOVES = {
     'headlight': b'\x2A',
     'rightWinker': b'\x2B'
 }
-
-PLAYERS_TAGS = ['p1', 'p2', 'p3', 'p4']

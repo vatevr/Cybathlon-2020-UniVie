@@ -58,8 +58,9 @@ class LogListener(FileSystemEventHandler):
                 if line not in self.enemy_logs[enemy_tag]:
                     self.enemy_logs[enemy_tag].append(line)
                     print(f'Line: {line}', end='')
-                    with ProcessPoolExecutor() as executor:
-                        executor.submit(self.enemy_controllers[enemy_tag].make_move, line)
+                    self.enemy_controllers[enemy_tag].make_move(line)
+                    # with ProcessPoolExecutor() as executor:
+                    #     executor.submit(self.enemy_controllers[enemy_tag].make_move, line)
 
     def on_modified(self, event):
         # if time between modifications is smaller than 1 second, skip

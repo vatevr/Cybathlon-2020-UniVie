@@ -25,6 +25,8 @@ class Controller:
         self.track[:self.number_of_zeros] = 0
         np.random.shuffle(self.track)
         self.track = self.track.tolist()
+        print(f'{self.player_tag}: {self.number_of_ones} / {self.track_length}')
+        print(f'{self.track}')
 
     def __send_right_move(self, line):
         if 'leftWinker' in line:
@@ -39,6 +41,9 @@ class Controller:
 
     def make_move(self, line):
         val = self.track.pop(0)
+        print(f'{self.player_tag}_track length: {len(self.track)}/{self.track_length}')
+        if len(self.track) == 0:
+            print(f'{self.player_tag}: Track ended!')
         if val == 1.0:
             self.__send_right_move(line)
         elif val == 0.0:
