@@ -1,0 +1,42 @@
+version: '3.7'
+
+services:
+  postgres_db:
+    image: postgres:12.0-alpine
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=docker
+    ports:
+      - 5432:5432
+    networks:
+      - cybathlon
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+
+  server:
+    build:
+      dockerfile: ./Dockerfile
+      context: ./
+    environment:
+      TEST: test_value
+      DBUSER: postgres
+      DBPASSWORD: docker
+      DBHOST: postgres_db
+      DBPORT: 5432
+    volumes:
+      - .:/app
+    networks:
+      - cybathlon
+    ports:
+      - 9888:9888
+    depends_on:
+      - postgres_db
+
+networks:
+  cybathlon:
+    driver: bridge
+    internal: false
+
+volumes:
+  postgres_data:

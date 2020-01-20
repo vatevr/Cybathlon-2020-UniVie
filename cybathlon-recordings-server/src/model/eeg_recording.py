@@ -1,0 +1,32 @@
+import uuid
+
+from flask_sqlalchemy import Model
+from sqlalchemy import Column, VARCHAR
+from sqlalchemy import text as sa_text
+from sqlalchemy.dialects.postgresql import UUID, BYTEA
+from sqlalchemy.orm import relationship
+
+
+class EEGRecording(Model):
+    __tablename__ = 'eeg_recordings'
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4,
+                   server_default=sa_text('uuid_generate_v4()'))
+    recording_file = Column(BYTEA(), nullable=False)
+    filename = Column(VARCHAR(60), nullable=False)
+    eeg_metadata = relationship('EEGRecordingMetadata', uselist=False, lazy='joined')
+
+    def __init__(self, recording_file, filename):
+        self.recording_file = recording_file
+        self.filename = filename
+
+    def as_dict(self):
+        base = {
+            'id': str(self.id),
+            'filename': self.filename,
+        }
+
+        if self.eeg_metadata:
+            base.update(self.eeg_metadata.as_dict())
+
+        return base
