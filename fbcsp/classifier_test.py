@@ -107,7 +107,7 @@ def test(raw) :
     svm = LinearSVC(penalty=penalty)
     svm_mne = LinearSVC(penalty=penalty)
     csp = CSP()
-    lda = classifier()
+    lda = classifier(method='svm')
     mycsp = FBCSP(filter_target='epoched', method='avg_power', bands=None, sum_class=False)
     #fbcsp.fit(epochs_data_train, labels)
     
@@ -134,9 +134,13 @@ def test(raw) :
     bpfiltered = np.zeros((raw_bpfiltered.shape[0], epochs_data.shape[0], raw_bpfiltered.shape[2], epochs_data.shape[2]))
     for epoch in range(epochs_data.shape[0]) :
         bpfiltered[:, epoch, :, :] = preproc.bpfilter_data(epochs_data[epoch, :, :])
-    """
-    for train_idx, test_idx in cv_split:
         
+    """
+    #pickle.dump(bpfiltered, open('bpfiltered.sav', 'wb'))
+    bpfiltered = pickle.load(open('bpfiltered.sav', 'rb'))
+    
+    for train_idx, test_idx in cv_split:
+    
         
         y_train, y_test = labels[train_idx], labels[test_idx]
         
@@ -148,8 +152,15 @@ def test(raw) :
         # fit classifier
         svm_mne.fit(X_train_mne, y_train)
         svm.fit(X_train_csp, y_train)
-        lda.fit(raw_bpfiltered[:, train_idx, :, :], y_train)
+        
+        lda.fit(epochs_data_train[train_idx], raw_bpfiltered[:, train_idx, :, :], y_train)
     
+    
+        score_this_window_fbcsp = []
+        for n in w_start:
+            score_this_window_fbcsp.append(lda.score(epochs_data[test_idx][:, :, n:(n + w_length)], y_test))
+        scores_windows_fbcsp.append(score_this_window_fbcsp)
+        
         score_this_window_mne = []
         for n in w_start:
             X_test_mne = csp.transform(epochs_data[test_idx][:, :, n:(n + w_length)])
@@ -159,18 +170,12 @@ def test(raw) :
         
         score_this_window_csp = []
         for n in w_start:
-            X_test_csp = csp.transform(epochs_data[test_idx][:, :, n:(n + w_length)])
+            X_test_csp = mycsp.transform(epochs_data[test_idx][:, :, n:(n + w_length)])
             score_this_window_csp.append(svm.score(X_test_csp, y_test))
         scores_windows_csp.append(score_this_window_csp)
-    
-        #import pdb
-        #pdb.set_trace()
-        """
-        score_this_window_fbcsp = []
-        for n in w_start:
-            score_this_window_fbcsp.append(lda.score(bpfiltered[:, test_idx][:, :, :, n:(n + w_length)], y_test))
-        scores_windows_fbcsp.append(score_this_window_fbcsp)
-        """
+
+
+
         # Plot scores over time
         w_times = (w_start + w_length / 2.) / sfreq + epochs.tmin
          
@@ -179,7 +184,7 @@ def test(raw) :
     plt.figure()
     plt.plot(w_times, np.mean(scores_windows_csp, 0), label='Score custom CSP')
     plt.plot(w_times, np.mean(scores_windows_mne, 0), label='Score mne CSP')
-    #plt.plot(w_times, np.mean(scores_windows_fbcsp, 0), label='Score custom FBCSP')
+    plt.plot(w_times, np.mean(scores_windows_fbcsp, 0), label='Score custom FBCSP')
     plt.axvline(0, linestyle='--', color='k', label='Onset')
     plt.axhline(0.5, linestyle='-', color='k', label='Chance')
     plt.xlabel('time (s)')
@@ -188,19 +193,19 @@ def test(raw) :
     plt.legend(loc='lower right')
     plt.show()
     
-    
+
     fbpipe = Pipeline([('FBCSP', mycsp), ('SVM', svm)])
-    pipe = Pipeline([("classifier", lda)])
     csppipe = Pipeline([('CSP', csp), ('SVM', svm)])
-        
+    cl = Pipeline([('FBCSP', classifier(prefiltered=False))])
+    
+    train_sizesfbcsp, train_scoresfbcsp, test_scoresfbcsp = learning_curve(cl, epochs_data_train, labels, cv=cv, verbose=0)
     train_sizesfb, train_scoresfb, test_scoresfb = learning_curve(fbpipe, epochs_data_train, labels, cv=cv, verbose=0)
     train_sizescsp, train_scorescsp, test_scorescsp = learning_curve(csppipe, epochs_data_train, labels, cv=cv, verbose=0)
-   # train_sizesfbcsp, train_scoresfbcsp, test_scoresfbcsp = learning_curve(pipe, raw_bpfiltered, labels, cv=cv, verbose=0)
-    """
+
     #mean and standard deviation for train scores for FBCSP
     train_scores_meanfbcsp = np.mean(train_scoresfbcsp, axis=1)
     train_scores_stdfbcsp = np.std(train_scoresfbcsp, axis=1)
-    """
+    
     #mean and standard deviation for train scores for CSP
     train_scores_meanfb = np.mean(train_scoresfb, axis=1)
     train_scores_stdfb = np.std(train_scoresfb, axis=1)
@@ -216,13 +221,13 @@ def test(raw) :
     #mean and standard deviation for test scores for CSP
     test_scores_meanfb = np.mean(test_scoresfb, axis=1)
     test_scores_stdfb = np.std(test_scoresfb, axis=1)
-    """
+
     #mean and standard deviation for test scores for FBCSP
     test_scores_meanfbcsp = np.mean(test_scoresfbcsp, axis=1)
     test_scores_stdfbcsp = np.std(test_scoresfbcsp, axis=1)
-    """
+
     #plot learning curve
-    """
+
     # Draw lines
     plt.plot(train_sizesfbcsp, train_scores_meanfbcsp, '--', color="#aa8800",  label="Training score with FBCSP")
     plt.plot(train_sizesfbcsp, test_scores_meanfbcsp, color="#00aa88", label="Cross-validation score with FBCSP")
@@ -230,7 +235,7 @@ def test(raw) :
     # Draw bands
     plt.fill_between(train_sizesfbcsp, train_scores_meanfbcsp - train_scores_stdfbcsp, train_scores_meanfbcsp + train_scores_stdfbcsp, color="#DDDDDD")
     plt.fill_between(train_sizesfbcsp, test_scores_meanfbcsp - test_scores_stdfbcsp, test_scores_meanfbcsp + test_scores_stdfbcsp, color="#DDDDDD")
-    """
+
     # Draw lines
     plt.plot(train_sizesfb, train_scores_meanfb, '--', color="#ff0000",  label="Training score with CSP")
     plt.plot(train_sizesfb, test_scores_meanfb, color="#0000ff", label="Cross-validation score with CSP")
@@ -253,7 +258,6 @@ def test(raw) :
     #plt.tight_layout()
     plt.show()
 
-    
 
 if __name__ == '__main__':
     
