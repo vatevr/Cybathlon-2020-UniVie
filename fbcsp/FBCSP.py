@@ -228,13 +228,19 @@ class FBCSP :
         """
         :param X : numpy array of epoched eeg data. Shape: epochs * channels/components * samples
         """
-        bandavg = np.zeros((X.shape[0], 4, X.shape[1]))
+        import pdb
+        pdb.set_trace()
+        bandavg = np.zeros((4, X.shape[0], X.shape[1]))
         for epoch in range(X.shape[0]) :
-            bandavg[epoch] = (sp.extract_amplitudes(X[epoch,:,:]))
+            bandavg[:,epoch,:] = sp.extract_amplitudes(X[epoch,:,:])
 
+        concat = np.zeros((bandavg.shape[1], bandavg.shape[0]*bandavg.shape[2]))
+        for band in range(bandavg.shape[0]) :
+            for epoch in range(bandavg.shape[1]) :
+                for component in range(bandavg.shape[2]) :
+                    concat[epoch, (band*component)+component] = (bandavg[band, epoch, component] ** 2) #concatenate square amplitude per band
         
-        X = bandavg.reshape(bandavg.shape[0], -1)
-        return X
+        return np.asarray(concat)
     
     def average_band_power(self, X) :
         """

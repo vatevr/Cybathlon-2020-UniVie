@@ -30,6 +30,7 @@ class feature_selector :
         band_ind = np.flip(np.argsort(self.scores_))
         band_ind = band_ind[:self.features] #pick the best n features
         self.bands_ = band_ind
+        print('feature selection scores: ' + str(self.scores_))
         
     """    
     def transform(self, X_csp) :
