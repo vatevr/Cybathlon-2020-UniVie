@@ -15,4 +15,5 @@ def plot_single_topomap(data, pos, vmin=None, vmax=None, title=None, cmap_rb=Fal
                                               size="10%", format='%3.3f')
     cbar.set_ticks((vmin, vmax))
     ax.set_title(title)
-    plt.savefig('brain.png')
+    # plt.savefig('brain.png')
+    plt.show()
