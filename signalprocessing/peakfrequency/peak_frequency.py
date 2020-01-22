@@ -47,3 +47,22 @@ class PeakFrequency:
             instant_frequency[band] = np.median(inst_freq, axis=0)
         # returns a dict for each frequency band containing a channel vector for each electrode's median inst freq
         return instant_frequency
+
+    def peaks_vector(self, x):
+        x = np.asarray(x)
+        if x.shape[0] != self.samples and x.shape[1] != self.channels:
+            raise ValueError("configs (", self.channels, ",", self.samples, ") do not match input dims ", x.shape)
+        if np.iscomplexobj(x):
+            raise ValueError("x is not a real signal.")
+        H = self.dft.dot(x) * self.hilbert.T
+        instant_frequency = dict()
+        for band in self.bands:
+            signal = np.zeros((self.samples, self.channels), dtype=complex)
+            from_val = int(self.samples / self.fs * self.bands[band][0])
+            to_val = int(self.samples / self.fs * self.bands[band][1])
+            signal[from_val:to_val, :] = H[from_val:to_val, :]
+            signal = signal.T.dot(self.idft).T
+            inst_phase = np.unwrap(np.angle(signal))
+            inst_freq = np.diff(inst_phase, axis=0) / (2 * np.pi) * self.fs
+            instant_frequency[band] = inst_freq
+        return instant_frequency
