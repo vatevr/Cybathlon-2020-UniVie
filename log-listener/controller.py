@@ -6,7 +6,7 @@ import numpy as np
 from connection import sendMove
 
 class Controller:
-    def __init__(self, player_tag, track_length, difficulty, folder_path, eeg_amp):
+    def __init__(self, player_tag, track_length, difficulty, min_delay, max_delay, folder_path, eeg_amp):
         self.player_tag = player_tag
 
         if player_tag == 'p1':
@@ -24,6 +24,8 @@ class Controller:
 
         self.track_length = track_length
         self.difficulty = float(difficulty)
+        self.min_delay = min_delay
+        self.max_delay = max_delay
         self.number_of_ones = int(self.track_length * difficulty)
         self.number_of_zeros = (self.track_length - self.number_of_ones)
         self.track = np.ones(self.track_length)
@@ -73,7 +75,7 @@ class Controller:
             chance = random.randint(0, 100) / 100.0
             print(f'{self.player_tag} has a chance of {chance} <= {self.difficulty}')
             if chance <= self.difficulty:
-                delay = random.randint(10, 25) / 10.0
+                delay = round(random.uniform(self.min_delay, self.max_delay), 1)
                 self.enemy_logs.append(f"{self.player_tag} delaying {delay} seconds \n")
                 print(f"{self.player_tag} delaying {delay} seconds \n")
                 time.sleep(delay)
