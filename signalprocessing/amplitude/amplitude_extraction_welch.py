@@ -5,6 +5,7 @@ from mne.channels.layout import _auto_topomap_coords as pos_from_raw
 import mne
 import numpy as np
 import scipy.signal
+import matplotlib.pyplot as plt
 
 brain_freq_bands = {
     'delta': (1, 4),
@@ -26,6 +27,8 @@ def avg_band_amplitude(power, lower_limit_index, upper_limit_index):
 # Returns for each brain wave bandwidth the average amplitude within that bandwidth for each electrode
 def extract_amplitudes(data):
     frequencies, power = calculate_psd(data)
+    plt.plot(power)
+    plt.show()
     rescaled_power = 10 * np.log10(power)
     amplitudes = []
     for wave, band_range in brain_freq_bands.items():
