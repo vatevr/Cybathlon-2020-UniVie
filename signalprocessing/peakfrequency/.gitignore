@@ -1,30 +1,3 @@
-GET
-URL = "products/{productId}/"
-{
-	"productId": 1
-}
-
-PUT
-URL = "/customers/"
-{
-	"id": 1,
-	"name": "john"
-}
-
-POST
-URL = "/customers/"
-{
-	"customer":[{
-		"id": 1,
-		"name": "john"
-	}
-	]
-}
-DELETE
-URL = "/customers/{id}/"
-{
-	
-}
 /data/
 /visualize.py
 /.idea/
