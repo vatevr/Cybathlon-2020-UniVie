@@ -43,6 +43,13 @@ class Controller:
             self.enemy_logs_file.write(line)
         self.enemy_logs_file.close()
 
+    def __send_wrong_move(self, line):
+        if 'none' in line:
+            wrong_move = random.choice(['leftWinker', 'headlight', 'rightWinker'])
+            sendMove(self.moves[wrong_move])
+            self.enemy_logs.append(f'{self.player_tag} sent wrong move: {wrong_move} \n\n')
+            print(f'{self.player_tag} sent wrong move: {wrong_move}', end='\n\n')
+
     def __send_right_move(self, line):
         if 'leftWinker' in line:
             self.eeg_amp.setData(self.eeg['leftWinker'])
@@ -75,6 +82,7 @@ class Controller:
             chance = random.randint(0, 100) / 100.0
             print(f'{self.player_tag} has a chance of {chance} <= {self.difficulty}')
             if chance <= self.difficulty:
+                self.__send_wrong_move(line)
                 delay = round(random.uniform(self.min_delay, self.max_delay), 1)
                 self.enemy_logs.append(f"{self.player_tag} delaying {delay} seconds \n")
                 print(f"{self.player_tag} delaying {delay} seconds \n")
