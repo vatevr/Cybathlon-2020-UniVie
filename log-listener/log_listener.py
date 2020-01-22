@@ -8,9 +8,9 @@ from concurrent.futures import ProcessPoolExecutor
 from watchdog.events import FileSystemEventHandler
 
 class LogListener(FileSystemEventHandler):
-    def __init__(self, player_tag, ai_turned_on, eeg_amp_connected, track_length=None, f_e_d=None, s_e_d=None, t_e_d=None, min_delay=1.0, max_delay=2.5):
-        self.player_tag = player_tag
-        self.ai_turned_on = ai_turned_on
+    def __init__(self, config_reader):
+        self.player_tag = config_reader.get_player_tag()
+        self.ai_turned_on = config_reader.get_ai_turned_on()
         self.last_modified = datetime.now()
         self.general_logs = []
         self.player_logs = []
@@ -20,7 +20,7 @@ class LogListener(FileSystemEventHandler):
         self.general_logs_file = open(f"{self.folder_path}/general_logs", "w")
         self.player_logs_file = open(f"{self.folder_path}/player_logs", "w")
         self.src_path = ""
-        self.eeg_amp = EEG_AMP(eeg_amp_connected)
+        self.eeg_amp = EEG_AMP(config_reader.get_eeg_amp_connected())
 
         if self.ai_turned_on == True:
             self.enemy_tags = constants.PLAYERS_TAGS
@@ -31,9 +31,9 @@ class LogListener(FileSystemEventHandler):
                 self.enemy_tags[2]: [],
             }
             self.enemy_controllers = {
-                self.enemy_tags[0]: Controller(self.enemy_tags[0], track_length, f_e_d, min_delay, max_delay, self.folder_path, self.eeg_amp),
-                self.enemy_tags[1]: Controller(self.enemy_tags[1], track_length, s_e_d, min_delay, max_delay, self.folder_path, self.eeg_amp),
-                self.enemy_tags[2]: Controller(self.enemy_tags[2], track_length, t_e_d, min_delay, max_delay, self.folder_path, self.eeg_amp),
+                self.enemy_tags[0]: Controller(self.enemy_tags[0], 'first', config_reader, self.folder_path, self.eeg_amp),
+                self.enemy_tags[1]: Controller(self.enemy_tags[1], 'second', config_reader, self.folder_path, self.eeg_amp),
+                self.enemy_tags[2]: Controller(self.enemy_tags[2], 'third', config_reader, self.folder_path, self.eeg_amp),
             }
 
     def __del__(self):

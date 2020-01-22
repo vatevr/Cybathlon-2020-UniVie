@@ -6,7 +6,7 @@ import numpy as np
 from connection import sendMove
 
 class Controller:
-    def __init__(self, player_tag, track_length, difficulty, min_delay, max_delay, folder_path, eeg_amp):
+    def __init__(self, player_tag, dif_index, config_reader, folder_path, eeg_amp):
         self.player_tag = player_tag
 
         if player_tag == 'p1':
@@ -22,11 +22,11 @@ class Controller:
             self.moves = constants.P4_MOVES
             self.eeg = constants.P4_EEG
 
-        self.track_length = track_length
-        self.difficulty = float(difficulty)
-        self.min_delay = min_delay
-        self.max_delay = max_delay
-        self.number_of_ones = int(self.track_length * difficulty)
+        self.difficulty = config_reader.get_enemy_difficulty(dif_index)
+        self.track_length = config_reader.get_track_length()
+        self.min_delay = config_reader.get_min_delay()
+        self.max_delay = config_reader.get_max_delay()
+        self.number_of_ones = int(self.track_length * self.difficulty)
         self.number_of_zeros = (self.track_length - self.number_of_ones)
         self.track = np.ones(self.track_length)
         self.track[:self.number_of_zeros] = 0
