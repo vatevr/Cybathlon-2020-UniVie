@@ -1,4 +1,4 @@
-PLAYERS_TAGS = ['p1', 'p2', 'p3', 'p4']
+PLAYER_TAGS = ['p1', 'p2', 'p3', 'p4']
 
 P1_MOVES = {
     'leftWinker': b'\x0B',
@@ -28,58 +28,68 @@ P1_EEG = {
     'leftWinker': 11,
     'headlight': 12,
     'rightWinker': 13,
-    'none': 14
+    'none': 14,
+    'finished': 15,
+    'leftWinkerSent': 16,
+    'headlightSent': 17,
+    'rightWinkerSent': 18
 }
 
 P2_EEG = {
     'leftWinker': 21,
     'headlight': 22,
     'rightWinker': 23,
-    'none': 24
+    'none': 24,
+    'finished': 25,
+    'leftWinkerSent': 26,
+    'headlightSent': 27,
+    'rightWinkerSent': 28
 }
 
 P3_EEG = {
     'leftWinker': 31,
     'headlight': 32,
     'rightWinker': 33,
-    'none': 34
+    'none': 34,
+    'finished': 35,
+    'leftWinkerSent': 36,
+    'headlightSent': 37,
+    'rightWinkerSent': 38
 }
 
 P4_EEG = {
     'leftWinker': 41,
     'headlight': 42,
     'rightWinker': 43,
-    'none': 44
+    'none': 44,
+    'finished': 45,
+    'leftWinkerSent': 46,
+    'headlightSent': 47,
+    'rightWinkerSent': 48
 }
 
-# PLAYER EEG DATA:
-## LEFT:        11
-## HEADLIGHTS:  12
-## RIGHT:       13
-## NONE:        14
+RACE_EEG = {
+    'started': 90,
+    'paused': 91,
+    'unpaused': 92
+}
 
-# ENEMY 1 EEG DATA:
-## LEFT:        21
-## HEADLIGHTS:  22
-## RIGHT:       23
-## NONE:        24
-## FINISHED:    25
+def get_moves_by_tag(tag):
+    if tag == 'p1':
+        return P1_MOVES
+    elif tag == 'p2':
+        return P2_MOVES
+    elif tag == 'p3':
+        return P3_MOVES
+    else:
+        return P4_MOVES
 
-# ENEMY 2 EEG DATA:
-## LEFT:        31
-## HEADLIGHTS:  32
-## RIGHT:       33
-## NONE:        34
-## FINISHED:    35
-
-# ENEMY 3 EEG DATA:
-## LEFT:        41
-## HEADLIGHTS:  42
-## RIGHT:       43
-## NONE:        44
-## FINISHED:    45
-
-# GAME RELATED EEG DATA:
-## STARTED:     90
-## PAUSED:      91
-## UNPAUSED:    92
+def get_eeg_by_tag(tag):
+    if tag == 'p1':
+        return P1_EEG
+    elif tag == 'p2':
+        return P2_EEG
+    elif tag == 'p3':
+        return P3_EEG
+    else:
+        return P4_EEG
