@@ -6,12 +6,12 @@ import numpy as np
 from connection import sendMove
 
 class Opponent():
-    def __init__(self, player_tag, dif_index, config_reader, folder_path, eeg_amp):
+    def __init__(self, player_tag, index, config_reader, folder_path, eeg_amp):
         self.player_tag = player_tag
         self.move_set = constants.get_move_set_by_tag(self.player_tag)
         self.eeg_set = constants.get_eeg_set_by_tag(self.player_tag)
-
-        self.difficulty = config_reader.get_opponent_difficulty(dif_index)
+        self.shouldMove = config_reader.get_opponent_on(index)
+        self.difficulty = config_reader.get_opponent_difficulty(index)
         self.track_length = config_reader.get_track_length()
         self.min_delay = config_reader.get_min_delay()
         self.max_delay = config_reader.get_max_delay()
@@ -26,7 +26,7 @@ class Opponent():
         self.eeg_amp = eeg_amp
         log = f'{self.player_tag}: {self.number_of_ones} / {self.track_length} \n'
         self.__print_and_add_log(log)
-        log = f'{self.track} \n'
+        log = f'{self.track} \n\n'
         self.__print_and_add_log(log)
 
     def __del__(self):
@@ -58,7 +58,10 @@ class Opponent():
             log = f'{self.player_tag} does not need to send any move: {move}\n'
         self.eeg_amp.setData(self.eeg_set[move])
         self.__print_and_add_log(log)
-        self.__decide_move_behaviour(move)
+        if self.shouldMove == True:
+            self.__decide_move_behaviour(move)
+        else:
+            self.__print_and_add_log("\n")
 
     def __send_wrong_move_if_none(self, move):
         if move == 'none':
