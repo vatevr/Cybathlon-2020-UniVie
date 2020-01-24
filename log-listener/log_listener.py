@@ -50,13 +50,13 @@ class LogListener(FileSystemEventHandler):
             self.general_logs.append(line)
         elif 'finish' in line and line not in self.general_logs:
             if self.player_tag in line:
-                self.eeg_amp.setData(constants.get_eeg_by_tag(self.player_tag)['finished'])
+                self.eeg_amp.setData(constants.get_eeg_set_by_tag(self.player_tag)['finished'])
             elif self.opponent_tags[0] in line:
-                self.eeg_amp.setData(constants.get_eeg_by_tag(self.opponent_tags[0])['finished'])
+                self.eeg_amp.setData(constants.get_eeg_set_by_tag(self.opponent_tags[0])['finished'])
             elif self.opponent_tags[1] in line:
-                self.eeg_amp.setData(constants.get_eeg_by_tag(self.opponent_tags[1])['finished'])
+                self.eeg_amp.setData(constants.get_eeg_set_by_tag(self.opponent_tags[1])['finished'])
             elif self.opponent_tags[2] in line:
-                self.eeg_amp.setData(constants.get_eeg_by_tag(self.opponent_tags[2])['finished'])
+                self.eeg_amp.setData(constants.get_eeg_set_by_tag(self.opponent_tags[2])['finished'])
             print(line)
             self.general_logs.append(line)
 
@@ -66,22 +66,19 @@ class LogListener(FileSystemEventHandler):
                 if line not in self.player_logs:
                     self.player_logs.append(line)
                     print(f'Line: {line}', end='')
-                    player_eeg = constants.get_eeg_by_tag(self.player_tag)
+                    player_eeg = constants.get_eeg_set_by_tag(self.player_tag)
                     if 'leftWinker' in line:
-                        print(f'{self.player_tag} needs to send move: left', end='\n\n')
+                        print(f'{self.player_tag} needs to send move: leftWinker', end='\n\n')
                         self.eeg_amp.setData(player_eeg['leftWinker'])
-                        pass
                     elif 'headlight' in line:
                         print(f'{self.player_tag} needs to send move: headlights', end='\n\n')
                         self.eeg_amp.setData(player_eeg['headlight'])
-                        pass
                     elif 'rightWinker' in line:
-                        print(f'{self.player_tag} needs to send move: right', end='\n\n')
+                        print(f'{self.player_tag} needs to send move: rightWinker', end='\n\n')
                         self.eeg_amp.setData(player_eeg['rightWinker'])
-                        pass
                     elif 'none' in line:
+                        print(f'{self.player_tag} does not need to send any move (none)', end='\n\n')
                         self.eeg_amp.setData(player_eeg['none'])
-                        pass
 
     def on_modified(self, event):
         # if modified file is not the race log file, skip

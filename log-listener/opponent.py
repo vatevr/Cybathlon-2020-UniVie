@@ -5,22 +5,11 @@ import constants
 import numpy as np
 from connection import sendMove
 
-class Opponent:
+class Opponent():
     def __init__(self, player_tag, dif_index, config_reader, folder_path, eeg_amp):
         self.player_tag = player_tag
-
-        if player_tag == 'p1':
-            self.moves = constants.P1_MOVES
-            self.eeg = constants.P1_EEG
-        elif player_tag == 'p2':
-            self.moves = constants.P2_MOVES
-            self.eeg = constants.P2_EEG
-        elif player_tag == 'p3':
-            self.moves = constants.P3_MOVES
-            self.eeg = constants.P3_EEG
-        else:
-            self.moves = constants.P4_MOVES
-            self.eeg = constants.P4_EEG
+        self.move_set = constants.get_move_set_by_tag(self.player_tag)
+        self.eeg_set = constants.get_eeg_set_by_tag(self.player_tag)
 
         self.difficulty = config_reader.get_opponent_difficulty(dif_index)
         self.track_length = config_reader.get_track_length()
@@ -32,62 +21,79 @@ class Opponent:
         self.track[:self.number_of_zeros] = 0
         np.random.shuffle(self.track)
         self.track = self.track.tolist()
-        print(f'{self.player_tag}: {self.number_of_ones} / {self.track_length}')
-        print(f'{self.track}')
-        self.opponent_logs = []
-        self.opponent_logs_file = open(f"{folder_path}/opponent_{self.player_tag}_log", "w")
+        self.logs = []
+        self.log_file = open(f"{folder_path}/opponent_{self.player_tag}_log", "w")
         self.eeg_amp = eeg_amp
+        log = f'{self.player_tag}: {self.number_of_ones} / {self.track_length} \n'
+        self.__print_and_add_log(log)
+        log = f'{self.track} \n'
+        self.__print_and_add_log(log)
 
     def __del__(self):
-        for line in self.opponent_logs:
-            self.opponent_logs_file.write(line)
-        self.opponent_logs_file.close()
+        for line in self.logs:
+            self.log_file.write(line)
+        self.log_file.close()
 
-    def __send_wrong_move(self, line):
-        if 'none' in line:
-            wrong_move = random.choice(['leftWinker', 'headlight', 'rightWinker'])
-            sendMove(self.moves[wrong_move])
-            self.opponent_logs.append(f'{self.player_tag} sent wrong move: {wrong_move} \n\n')
-            print(f'{self.player_tag} sent wrong move: {wrong_move}', end='\n\n')
+    def __print_and_add_log(self, log):
+        self.logs.append(log)
+        print(log)
 
-    def __send_right_move(self, line):
+    def move(self, line):
+        line = line.replace("\n", "")
+        log = f'Line: {line}\n'
+        self.__print_and_add_log(log)
+        move = None
+        log = None
         if 'leftWinker' in line:
-            self.eeg_amp.setData(self.eeg['leftWinker'])
-            sendMove(self.moves['leftWinker'])
-            self.opponent_logs.append(f'{self.player_tag} sent move: left \n\n')
-            print(f'{self.player_tag} sent move: left', end='\n\n')
+            move = 'leftWinker'
+            log = f'{self.player_tag} needs to send move: {move}\n'
         elif 'headlight' in line:
-            self.eeg_amp.setData(self.eeg['headlight'])
-            sendMove(self.moves['headlight'])
-            self.opponent_logs.append(f'{self.player_tag} sent move: headlight \n\n')
-            print(f'{self.player_tag} sent move: headlight', end='\n\n')
+            move = 'headlight'
+            log = f'{self.player_tag} needs to send move: {move}\n'
         elif 'rightWinker' in line:
-            self.eeg_amp.setData(self.eeg['rightWinker'])
-            sendMove(self.moves['rightWinker'])
-            self.opponent_logs.append(f'{self.player_tag} sent move: right \n\n')
-            print(f'{self.player_tag} sent move: right', end='\n\n')
-        else:
-            self.eeg_amp.setData(self.eeg['none'])
-            self.opponent_logs.append(f'{self.player_tag} did not send any move \n\n')
-            print(f'{self.player_tag} did not send any move', end='\n\n')
+            move = 'rightWinker'
+            log = f'{self.player_tag} needs to send move: {move}\n'
+        elif 'none' in line:
+            move = 'none'
+            log = f'{self.player_tag} does not need to send any move: {move}\n'
+        self.eeg_amp.setData(self.eeg_set[move])
+        self.__print_and_add_log(log)
+        self.__decide_move_behaviour(move)
 
-    def make_move(self, line):
-        self.opponent_logs.append(f'Line: {line}')
-        print(f'Line: {line}')
+    def __send_wrong_move_if_none(self, move):
+        if move == 'none':
+            wrong_move = random.choice(['leftWinker', 'headlight', 'rightWinker'])
+            sendMove(self.move_set[wrong_move])
+            self.eeg_amp.setData(self.eeg_set[wrong_move + 'Sent'])
+            log = f'{self.player_tag} sent wrong move: {wrong_move} \n'
+            self.__print_and_add_log(log)
+
+    def __send_right_move(self, move):
+        if move != 'none':
+            sendMove(self.move_set[move])
+        self.eeg_amp.setData(self.eeg_set[move + 'Sent'])
+        log = None
+        if move == 'none':
+            log = f'{self.player_tag} did not send any move \n\n'
+        else:
+            log = f'{self.player_tag} sent move: {move} \n\n'
+        self.__print_and_add_log(log)
+
+    def __decide_move_behaviour(self, move):
         val = self.track.pop(0)
-        print(f'{self.player_tag}_track length: {len(self.track)}/{self.track_length}')
         if val == 1.0:
-            self.__send_right_move(line)
+            self.__send_right_move(move)
         elif val == 0.0:
             chance = random.randint(0, 100) / 100.0
-            print(f'{self.player_tag} has a chance of {chance} <= {self.difficulty}')
+            log = f'{self.player_tag} has a chance of {chance} <= {self.difficulty} \n'
+            self.__print_and_add_log(log)
             if chance <= self.difficulty:
-                self.__send_wrong_move(line)
+                self.__send_wrong_move_if_none(move)
                 delay = round(random.uniform(self.min_delay, self.max_delay), 1)
-                self.opponent_logs.append(f"{self.player_tag} delaying {delay} seconds \n")
-                print(f"{self.player_tag} delaying {delay} seconds \n")
+                log = f'{self.player_tag} delaying {delay} seconds \n'
+                self.__print_and_add_log(log)
                 time.sleep(delay)
-                self.__send_right_move(line)
+                self.__send_right_move(move)
             else:
-                self.opponent_logs.append(f'{self.player_tag} did not send any move \n\n')
-                print(f'{self.player_tag} did not send any move', end='\n\n')
+                log = f'{self.player_tag} could not send any move \n\n'
+                self.__print_and_add_log(log)

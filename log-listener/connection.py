@@ -1,5 +1,5 @@
-import socket
 import sys
+import socket
 
 IPADRESS = socket.gethostname()
 PORTNUM = 5555

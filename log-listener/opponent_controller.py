@@ -22,5 +22,5 @@ class OpponentController():
                 if 'none because end of curve' not in line:
                     if line not in self.opponent_logs[opponent_tag]:
                         self.opponent_logs[opponent_tag].append(line)
-                        self.opponents[opponent_tag].make_move(line)
+                        self.opponents[opponent_tag].move(line)
                 break

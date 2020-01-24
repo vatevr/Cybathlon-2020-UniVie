@@ -32,7 +32,8 @@ P1_EEG = {
     'finished': 15,
     'leftWinkerSent': 16,
     'headlightSent': 17,
-    'rightWinkerSent': 18
+    'rightWinkerSent': 18,
+    'noneSent': 19, 
 }
 
 P2_EEG = {
@@ -43,7 +44,8 @@ P2_EEG = {
     'finished': 25,
     'leftWinkerSent': 26,
     'headlightSent': 27,
-    'rightWinkerSent': 28
+    'rightWinkerSent': 28,
+    'noneSent': 29,
 }
 
 P3_EEG = {
@@ -54,7 +56,8 @@ P3_EEG = {
     'finished': 35,
     'leftWinkerSent': 36,
     'headlightSent': 37,
-    'rightWinkerSent': 38
+    'rightWinkerSent': 38,
+    'noneSent': 39,
 }
 
 P4_EEG = {
@@ -66,6 +69,7 @@ P4_EEG = {
     'leftWinkerSent': 46,
     'headlightSent': 47,
     'rightWinkerSent': 48
+    ,'noneSent': 49,
 }
 
 RACE_EEG = {
@@ -74,7 +78,7 @@ RACE_EEG = {
     'unpaused': 92
 }
 
-def get_moves_by_tag(tag):
+def get_move_set_by_tag(tag):
     if tag == 'p1':
         return P1_MOVES
     elif tag == 'p2':
@@ -84,7 +88,7 @@ def get_moves_by_tag(tag):
     else:
         return P4_MOVES
 
-def get_eeg_by_tag(tag):
+def get_eeg_set_by_tag(tag):
     if tag == 'p1':
         return P1_EEG
     elif tag == 'p2':
