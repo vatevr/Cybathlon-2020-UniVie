@@ -8,7 +8,7 @@ import pickle
 
 class classifier :
     
-    def __init__(self, components=4, bands='all', classes=2, method='svm', prefiltered=True):
+    def __init__(self, components=4, featurebands=4, bands='all', classes=2, estimator='svm', selector='linear'):
         """
         :param components : int. number of CSP components the filter will contain
         :param bands : dict. one or multiple frequency bands
@@ -19,9 +19,9 @@ class classifier :
         
         :attribute filters_ : numpy array. CSP filter.  Shape: channels * samples
         """
-        
-        self.prefiltered = prefiltered
-        self.method = method
+        self.selector = selector
+        self.featurebands = featurebands
+        self.estimator = estimator
         self.components  = components
         self.classes = classes
         if bands == None :
@@ -65,31 +65,34 @@ class classifier :
         classifier = pickle.load(open(filename, 'rb'))
         return classifier
     
+    def fit_raw(self, raw, y, label_pos) :
+        preproc = Preproc(fs=161, windowlength=1, bands=self.bands)
+        raw_bpfiltered_epoched = preproc.preproc(raw, label_pos)
+        preproc = Preproc(fs=161, windowlength=1, bands=None)
+        raw_centered = preproc.center_data(raw)
+        raw_centered_epoched = preproc.epoch(raw_centered, label_pos)
+
+        self.fit(raw_centered_epoched, raw_bpfiltered_epoched, y)        
+        
+    
     def fit (self, epoched, X, y) :
         """
         :param X : numpy array of Shape: bands * epochs* channels * samples
         """
         
-        #if not filtered, bandpass filter
-        if self.prefiltered == False :
-            preproc = Preproc(fs=161, windowlength=1, bands='all')
-            raw_bpfiltered = preproc.preproc(X, y)
-        
-        fbcsp = FBCSP(filter_target='epoched', method='avg_power', bands=self.bands)
-        sf = feature_selector(method='linear')
+        fbcsp = FBCSP(filter_target='epoched', method='avg_power', bands=self.bands, components=self.components)
+        sf = feature_selector(method=self.selector, features=self.featurebands)
         
         
         #select classifier to use
-        if self.method == 'lda' :    
+        if self.estimator == 'lda' :    
             clf = LDA()
-        elif self.method == 'svm' :
+        elif self.estimator == 'svm' :
             clf = LinearSVC()
         else :
             print('TODO')
         
-        
-        #import pdb
-        #pdb.set_trace()
+    
         
         #fit the fbcsp filters
         fil = fbcsp.fit_transform(X, y)

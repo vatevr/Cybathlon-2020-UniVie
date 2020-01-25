@@ -4,12 +4,16 @@ from sklearn.pipeline import Pipeline
 from scipy.stats import pearsonr
 from classifier import classifier
 
+import mne
 from mne.io import concatenate_raws, read_raw_edf
 from mne.datasets import eegbci
 from mne.decoding import CSP
 from FBCSP import FBCSP
 from FBCSP import Preproc
 from mne import Epochs, pick_types, events_from_annotations
+from mne.channels.layout import _auto_topomap_coords as pos_from_raw
+from mne.channels import make_standard_montage
+from mne.channels import read_layout
 from sklearn.preprocessing import StandardScaler
 import numpy as np
 import matplotlib.pyplot as plt
@@ -43,8 +47,34 @@ def score_window(data, filterpath='csp_filters.sav', classifierpath='classifier.
     prediction = classifier.predict([data[0]])
     return prediction
 
+def plot_topomaps(raw) : #Credit to Anja Meunier
+    montage = mne.channels.read_montage("standard_1005")
+    raw.set_montage(montage)
+    raw.info['bads'] = ['F2', 'O2']
+    picks = mne.pick_types(raw.info, eeg=True, stim=False, exclude='bads')# Create events from triggers
+    events = mne.events_from_annotations(raw)[0]# Epoch data (cut up data into trials)
+    tmin = -1            # time in seconds after trigger the trial should start
+    tmax = 4     # time in seconds after trigger the trial should end
+    epochs = mne.Epochs(raw, events, tmin=tmin, tmax=tmax, preload=True, baseline=None, picks=picks)# Plot topographies in selected frequency bands for selected conditions
+    bands =  [(8, 12, 'Alpha (8 - 12)')]
+    epochs['1'].plot_psd_topomap()
+    
+def plot_single_topomap(data, pos, vmin=None, vmax=None, title=None, cmap_rb=False):
+    vmin = np.min(data) if vmin is None else vmin
+    vmax = np.max(data) if vmax is None else vmax
+    fig, ax  = plt.subplots()
+    cmap = mne.viz.utils._setup_cmap('interactive', norm=1-cmap_rb)
+    im, _ = mne.viz.topomap.plot_topomap(data, pos, vmin=vmin, vmax=vmax, axes=ax,
+                         cmap=cmap[0], image_interp='bilinear', contours=0,
+                         outlines='skirt', show=False)
+    cbar, cax = mne.viz.topomap._add_colorbar(ax, im, cmap, pad=.25, title=None,
+                                  size="10%", format='%3.3f')
+    cbar.set_ticks((vmin, vmax))
+    ax.set_title(title)
+    
 
 def compare_CSP_with_FBCSP(raw_data) :
+    
     events, _ = events_from_annotations(raw, event_id=dict(T1=1, T2=2))
     epochs = Epochs(raw, events, event_id, tmin, tmax, preload=True) #picks to pick specific channels
     labels = epochs.events[:, -1] - 1 #turning it into 0 and 1
@@ -76,6 +106,19 @@ def compare_CSP_with_FBCSP(raw_data) :
     
 def test(raw) :
     
+    tmin, tmax = -1., 4.
+    event_id = dict(hands=2, feet=3)
+    subject = 1
+    runs = [6, 10, 14]  # motor imagery: hands vs feet
+    
+    raw_fnames = eegbci.load_data(subject, runs)
+    raw = concatenate_raws([read_raw_edf(f, preload=True) for f in raw_fnames])
+    eegbci.standardize(raw)  # set channel names
+    montage = make_standard_montage('standard_1005')
+    raw.set_montage(montage)
+    
+    # strip channel names of "." characters
+    raw.rename_channels(lambda x: x.strip('.'))
     events, _ = events_from_annotations(raw, event_id=dict(T1=1, T2=2))
     
     preproc = Preproc(fs=161, windowlength=1, bands='all')
@@ -85,8 +128,7 @@ def test(raw) :
     raw.filter(7., 30., fir_design='firwin', skip_by_annotation='edge')
     
     
-        
-    #picks = pick_types(raw.info, meg=False, eeg=True, stim=False, eog=False, exclude='bads')
+    picks = pick_types(raw.info, meg=False, eeg=True, stim=False, eog=False, exclude='bads')
         
     # Read epochs (train will be done only between 1 and 2s)
     # Testing will be done with a running classifier
@@ -107,7 +149,7 @@ def test(raw) :
     svm = LinearSVC(penalty=penalty)
     svm_mne = LinearSVC(penalty=penalty)
     csp = CSP()
-    lda = classifier(method='svm')
+    lda = classifier(estimator='svm', components=4, featurebands=6, bands='all')
     mycsp = FBCSP(filter_target='epoched', method='avg_power', bands=None, sum_class=False)
     #fbcsp.fit(epochs_data_train, labels)
     
@@ -140,7 +182,7 @@ def test(raw) :
     bpfiltered = pickle.load(open('bpfiltered.sav', 'rb'))
     
     for train_idx, test_idx in cv_split:
-    
+        
         
         y_train, y_test = labels[train_idx], labels[test_idx]
         
@@ -152,6 +194,9 @@ def test(raw) :
         # fit classifier
         svm_mne.fit(X_train_mne, y_train)
         svm.fit(X_train_csp, y_train)
+        
+        import pdb
+        pdb.set_trace()
         
         lda.fit(epochs_data_train[train_idx], raw_bpfiltered[:, train_idx, :, :], y_train)
     
@@ -196,7 +241,7 @@ def test(raw) :
 
     fbpipe = Pipeline([('FBCSP', mycsp), ('SVM', svm)])
     csppipe = Pipeline([('CSP', csp), ('SVM', svm)])
-    cl = Pipeline([('FBCSP', classifier(prefiltered=False))])
+    cl = Pipeline([('FBCSP', classifier())])
     
     train_sizesfbcsp, train_scoresfbcsp, test_scoresfbcsp = learning_curve(cl, epochs_data_train, labels, cv=cv, verbose=0)
     train_sizesfb, train_scoresfb, test_scoresfb = learning_curve(fbpipe, epochs_data_train, labels, cv=cv, verbose=0)
@@ -275,17 +320,49 @@ if __name__ == '__main__':
     raw_fnames = eegbci.load_data(subject, runs)
     raw = concatenate_raws([read_raw_edf(f, preload=True) for f in raw_fnames])
     
+    
     # strip channel names of "." characters
     raw.rename_channels(lambda x: x.strip('.'))
     events, _ = events_from_annotations(raw, event_id=dict(T1=1, T2=2))
+    
+
     
     epochs = Epochs(raw, events, event_id, tmin, tmax, preload=True) #picks to pick specific channels
     epochs_train = epochs.copy().crop(tmin=1., tmax=2.)
     labels = epochs.events[:, -1] - 1 #turning it into 0 and 1
     epochs_data_train = epochs_train.get_data()
+    
+    #raw.info['bads'] = ['F2', 'O2']
+    picks = mne.pick_types(raw.info, eeg=True, stim=False)
+    
+    
+    
+    preproc = Preproc(fs=161, windowlength=1, bands='all')
+    raw_bpfiltered = preproc.preproc(raw.get_data(), events.T[0])
+    
+    mycsp = FBCSP(filter_target='epoched', method='avg_power', bands='all', sum_class=False)
+    X_train_csp = mycsp.fit_transform(raw_bpfiltered, labels)
+    mne_csp = CSP()
+    
+    layout = read_layout('EEG1005')
+    
+    
+    mne_csp.fit_transform(epochs.get_data(), labels)
+    mne_csp.plot_patterns(epochs.info, ch_type='eeg', units='Patterns (arbitrary)', size=1.5, layout=layout, title='MNE CSP 7-30 eegbci')
+    
+    mycsp.plot_patterns(epochs.info, layout=layout, title='Custom CSP eegbci dataset')
 
+    
+    #X_train_csp = np.mean(mycsp.filters_.T, axis=1)
+    
+    #plot_topomaps(raw)
+    #pos = pos_from_raw(raw.info, picks)
+    
+    #for component in range(mycsp.filters_.shape[0]) :
+    #    plot_single_topomap(mne_csp.filters_[component], pos, vmin=None, vmax=None, title='eegbci dataset fbcsp filtered, component ' + str(component))
+    
     #test
-    test(raw)
+    #test(raw)
     #compare_CSP_with_FBCSP(raw) 
     """
     print(score_window(epochs_data_train[3]))

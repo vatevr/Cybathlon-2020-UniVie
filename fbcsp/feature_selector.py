@@ -18,7 +18,6 @@ class feature_selector :
         """
         :param X : numpy array of shape bands *  epochs * csp_components
         """
-    
         
         if self.method == 'mi' :
             self.scores_ = self.mi_based_selection(X_csp, y)

@@ -7,6 +7,7 @@ from scipy.linalg import eigh
 from mne.filter import filter_data
 from mne import cov as mne_cov
 from feature_selector import feature_selector
+from scipy import linalg
 
 #from sklearn.preprocessing import scale
 
@@ -45,13 +46,13 @@ class FBCSP :
         if X.ndim == 3 :
             X_1, X_2 = self.separate_classes(X, y)
             if self.sum_class == True :
-                self.filters_ = self.csp_sum_class(X_1, X_2, self.components)
+                self.filters_, self.patterns_ = self.csp_sum_class(X_1, X_2, self.components)
             else :
-                self.filters_ = self.csp(X_1, X_2, self.components)
+                self.filters_, self.patterns_ = self.csp(X_1, X_2, self.components)
             print('CSP filters fit. Filter shape: ' + str(self.filters_.shape))
         else :
             X_1, X_2 = self.separate_classes(X, y)
-            self.filters_ = self.fbcsp(X_1, X_2, self.components)
+            self.filters_, self.patterns_ = self.fbcsp(X_1, X_2, self.components)
             print('FBCSP filters fit. Filter shape: ' + str(self.filters_.shape))
         
         return self
@@ -61,7 +62,7 @@ class FBCSP :
         :param X : 4d numpy array time-domain data. Shape: band (optional) * epochs (optional) * channels * samples
         """
         
-        if self.filter_target == 'epoched' and len(self.bands) == 1:
+        if self.filter_target == 'epoched' and X.ndim == 3 :
             filtered_data = np.asarray([np.dot(self.filters_, epoch) for epoch in X])
             
             if self.method == 'avg_power' :
@@ -76,7 +77,7 @@ class FBCSP :
                 print('Single-band epoched data filtered. Shape: ' + str(filtered_data.shape))
             return filtered_data
          
-        elif self.filter_target == 'epoched' and len(self.bands) > 1:
+        elif self.filter_target == 'epoched' and X.ndim > 3:
             filtered_data = np.zeros((X.shape[0], X.shape[1], self.components, X.shape[3]))
             for band in range(X.shape[0]) :
                 for epoch in range(X.shape[1]) :
@@ -137,10 +138,14 @@ class FBCSP :
         
         #find the eigen values that account for the highest separability among the two classes
         component_ind = np.flip(np.argsort(np.abs(np.log10(eig_value)))) #get the indices of the most incisive eigenvalues
+        eig_vector = eig_vector[:, component_ind] #sort eigenvector matrix
         component_ind = component_ind[:k] #select first k components
         
+        
+        patterns = linalg.pinv2(eig_vector) #copied from mne library
+        
         #pick and return CSP components from eigenvectors
-        return np.array([eig_vector[:, idx] for idx in component_ind])
+        return np.array([eig_vector[:, idx] for idx in component_ind]), patterns
     
         
         #note to self: https://www.ncbi.nlm.nih.gov/pubmed/18632362 if it will be expanded to multiclass. 
@@ -185,12 +190,14 @@ class FBCSP :
         
         #find the eigen values that account for the highest separability among the two classes
         component_ind = np.flip(np.argsort(np.abs(eig_value-0.5))) #get the indices of the most incisive eigenvalues
+        eig_vector = eig_vector[:, component_ind] #sort eigenvector matrix
         component_ind = component_ind[:k] #select first k components
         
+        patterns = linalg.pinv2(eig_vector)                 #shamelessly copied from mne
         #pick and return CSP components from eigenvectors
         #import pdb
         #pdb.set_trace()
-        return np.array([eig_vector[:, idx] for idx in component_ind])
+        return np.array([eig_vector[:, idx] for idx in component_ind]), patterns
     
         
         #note to self: https://www.ncbi.nlm.nih.gov/pubmed/18632362 if it will be expanded to multiclass. 
@@ -206,14 +213,15 @@ class FBCSP :
         #pdb.set_trace()
         
         fbcsp_result = np.zeros((X_1.shape[0], k, X_1.shape[2]))
+        fbcsp_patterns = np.zeros((X_1.shape[0], X_1.shape[2], X_1.shape[2]))
         
         #apply CSP to each band
         for band in range(X_1.shape[0]) :
-            fbcsp_result[band,:,:] = self.csp(X_1[band,:,:,:], X_2[band,:,:,:], k)
+            fbcsp_result[band,:,:], fbcsp_patterns[band, :, :] = self.csp(X_1[band,:,:,:], X_2[band,:,:,:], k)
         if self.sum_class == True :
-            fbcsp_result[band,:,:] = self.csp_sum_class(X_1[band,:,:,:], X_2[band,:,:,:], k) 
+            fbcsp_result[band,:,:], fbcsp_patterns[band,:,:] = self.csp_sum_class(X_1[band,:,:,:], X_2[band,:,:,:], k) 
             
-        return fbcsp_result
+        return fbcsp_result, fbcsp_patterns
     
     def concatenate_result(self, X) :
         """
@@ -266,7 +274,7 @@ class FBCSP :
         :param y : numpy array of class labels
         """
         
-        if len(self.bands) == 1 :
+        if X.ndim == 3 :
             #Binary case
             if self.classes == 2 :
                 #extract class labels
@@ -305,6 +313,82 @@ class FBCSP :
             else :
                 #TODO
                 print('TODO')
+                
+    def plot_patterns(self, info, layout=None, title=None) : #shamelessly adapted from mne
+        from mne import EvokedArray
+        import copy as cp
+        
+        info = cp.deepcopy(info)
+        info['sfreq'] = 1.
+        
+        
+        if len(self.bands) < 2 :
+            patterns = EvokedArray(self.patterns_.T, info, tmin=0)
+        
+            return patterns.plot_topomap(
+                times=np.arange(self.components), ch_type='eeg', units='Patterns (arbitrary unit)', 
+                          time_unit='s', layout=layout, cmap='RdBu_r', sensors=True,
+                          colorbar=True, scalings=None, res=64,
+                          size=1.5, cbar_fmt='%3.1f', #name_format='CSP%01d',
+                          show=True, show_names=False, title=title, mask=None,
+                          mask_params=None, outlines='head', contours=6,
+                          image_interp='bilinear', average=None, head_pos=None, time_format='CSP%01d')
+    
+        else :
+            plots = []
+            for band in range(self.patterns_.shape[0]) :
+
+                patterns = EvokedArray(self.patterns_[band, :, :].T, info, tmin=0)
+                
+                thisband = list(self.bands)[band]
+    
+                plots.append( patterns.plot_topomap(
+                    times=np.arange(self.components), ch_type='eeg', units='Patterns (arbitrary unit)', 
+                    time_unit='s', layout=layout, cmap='RdBu_r', sensors=True,
+                    colorbar=True, scalings=None, res=64,
+                    size=1.5, cbar_fmt='%3.1f', #name_format='CSP%01d',
+                    show=True, show_names=False, title=(title+' band '+thisband + ' ' + str(self.bands.get(thisband)) + 'Hz'), mask=None,
+                    mask_params=None, outlines='head', contours=6,
+                    image_interp='bilinear', average=None, head_pos=None, time_format='CSP%01d'))
+            return plots
+    
+    def plot_filters(self, info, layout=None, title=None) :
+        from mne import EvokedArray
+        import copy as cp
+        
+        info = cp.deepcopy(info)
+        info['sfreq'] = 1.
+        
+        
+        if len(self.bands) < 2 :
+            patterns = EvokedArray(self.filters_.T, info, tmin=0)
+        
+            return patterns.plot_topomap(
+                times=np.arange(self.components), ch_type='eeg', units='Patterns (arbitrary unit)', 
+                          time_unit='s', layout=layout, cmap='RdBu_r', sensors=True,
+                          colorbar=True, scalings=None, res=64,
+                          size=1.5, cbar_fmt='%3.1f', #name_format='CSP%01d',
+                          show=True, show_names=False, title=title, mask=None,
+                          mask_params=None, outlines='head', contours=6,
+                          image_interp='bilinear', average=None, head_pos=None, time_format='CSP%01d')
+    
+        else :
+            plots = []
+            for band in range(self.filters_.shape[0]) :
+
+                patterns = EvokedArray(self.filters_[band, :, :].T, info, tmin=0)
+                
+                thisband = list(self.bands)[band]
+    
+                plots.append( patterns.plot_topomap(
+                    times=np.arange(self.components), ch_type='eeg', units='Patterns (arbitrary unit)', 
+                    time_unit='s', layout=layout, cmap='RdBu_r', sensors=True,
+                    colorbar=True, scalings=None, res=64,
+                    size=1.5, cbar_fmt='%3.1f', #name_format='CSP%01d',
+                    show=True, show_names=False, title=(title+' band '+thisband + ' ' + str(self.bands.get(thisband)) + 'Hz'), mask=None,
+                    mask_params=None, outlines='head', contours=6,
+                    image_interp='bilinear', average=None, head_pos=None, time_format='CSP%01d'))
+            return plots
 
 class Preproc :
     
@@ -371,7 +455,7 @@ class Preproc :
         return self.bpfiltered_data_
      
     def epoch(self, raw_data, label_pos) :
-
+        
         #extract epochs         
         samples_per_epoch = int(self.fs*self.windowlength)     #number of samples in a window
         
