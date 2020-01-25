@@ -1,43 +1,23 @@
 import datetime
 import json
 import logging
-import os
 import uuid
-import warnings
 
 from flask import Flask, request, jsonify, Response
-from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine, MetaData
-from sqlalchemy.orm import sessionmaker, joinedload
+from sqlalchemy.orm import joinedload
 
 from src.model.eeg_recording import EEGRecording
 from src.model.eeg_recording_metadata import EEGRecordingMetadata
-from src.model.my_model import MyModel
+from src.service.transfer_manager import TransferManager
 
 app = Flask(__name__)
 
-dbuser = os.environ.get('DBUSER', 'postgres')
-dbpassword = os.environ.get('DBPASSWORD', 'docker')
-dbhost = os.environ.get('DBHOST', '0.0.0.0')
-dbport = os.environ.get('DBPORT', '5432')
+transfer_manager = TransferManager()
 
-print(f'postgres environment {dbhost}:{dbport}')
-
-if not os.environ.get('TEST'):
-    warnings.warn('TEST environment variable not found.')
-
-app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://{dbuser}:{dbpassword}@{dbhost}:{dbport}/postgres'
-
-engine = create_engine(f'postgresql://{dbuser}:{dbpassword}@{dbhost}:{dbport}/postgres')
-Session = sessionmaker(bind=engine)
-session = Session()
-
-db = SQLAlchemy(app)
-
-model = MyModel()
 
 def find_recording(id):
-    rec = session.query(EEGRecording.id) \
+    rec = transfer_manager.session.query(EEGRecording.id) \
         .with_entities(EEGRecording.id) \
         .filter(EEGRecording.id == uuid.UUID(id)) \
         .scalar()
@@ -63,17 +43,17 @@ def upload_recording():
     recording = EEGRecording(recording_file=file.read(), filename=file.filename)
 
     try:
-        session.add(recording)
-        session.commit()
-        session.refresh(recording)
+        transfer_manager.session.add(recording)
+        transfer_manager.session.commit()
+        transfer_manager.session.refresh(recording)
         print(str(recording.id))
     except:
-        session.rollback()
+        transfer_manager.session.rollback()
         logging.exception('')
         api_error("couldn't save the file")
         raise
     finally:
-        session.close()
+        transfer_manager.session.close()
 
     return Response(json.dumps({'id': str(recording.id), 'filename': file.filename, 'message': 'upload successfull'}))
 
@@ -83,7 +63,7 @@ def download_recording(recording_id):
     # if not find_recording(recording_id):
     #     return api_error(f'file with id {recording_id} was not found')
 
-    recording: EEGRecording = session \
+    recording: EEGRecording = transfer_manager.session \
         .query(EEGRecording) \
         .filter(EEGRecording.id == uuid.UUID(recording_id)) \
         .first()
@@ -109,14 +89,14 @@ def mark_metadata(recording_id):
                                     bool(content['with_feedback']),
                                     recording_uuid)
 
-    session.query(EEGRecordingMetadata) \
+    transfer_manager.session.query(EEGRecordingMetadata) \
         .filter(EEGRecordingMetadata.recording == recording_uuid) \
         .delete()
 
-    session.add(metadata)
-    session.commit()
+    transfer_manager.session.add(metadata)
+    transfer_manager.session.commit()
 
-    session.refresh(metadata)
+    transfer_manager.session.refresh(metadata)
     print(str(content))
 
     return jsonify({'uuid': recording_id})
@@ -136,9 +116,7 @@ def find_recordings():
 
 
 def build_query():
-    fields = [EEGRecording.id, EEGRecording.filename, EEGRecording.eeg_metadata]
-
-    query = session \
+    query = transfer_manager.session \
         .query(EEGRecording)\
         .options(joinedload(EEGRecording.eeg_metadata))
 
@@ -161,16 +139,16 @@ def build_query():
 
 @app.route('/api/verify', methods=['GET'])
 def verify_connection():
-    connection_str = 'postgresql://' + dbuser + ':' + dbpassword + '@' + dbhost + ':' + dbport + '/postgres'
+    connection_str = transfer_manager.connection_str
     verify_engine = create_engine(connection_str)
     engine_connection = verify_engine.connect()
 
     # Create a metadata instance
     metadata = MetaData(verify_engine)
     # Declare a table
-    table = db.Table('Example', metadata,
-                     db.Column('id', db.Integer, primary_key=True),
-                     db.Column('name', db.String))
+    table = transfer_manager.db.Table('verify_table', metadata,
+                     transfer_manager.db.Column('id', transfer_manager.db.Integer, primary_key=True),
+                     transfer_manager.db.Column('name', transfer_manager.db.String))
 
     # Create all tables
     metadata.create_all()
