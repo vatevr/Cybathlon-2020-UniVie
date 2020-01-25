@@ -37,25 +37,22 @@ def upload_recording():
     :return: success response after the succssful upload, internal server error after failure
     """
     if 'file' not in request.files:
-        return Response(json.dumps({'message': 'internal server error!'}), status=500)
+        return api_error('file required')
 
     file = request.files['file']
+
+    if not file:
+        return api_error('file is empty')
+
     recording = EEGRecording(recording_file=file.read(), filename=file.filename)
 
     try:
-        transfer_manager.session.add(recording)
-        transfer_manager.session.commit()
-        transfer_manager.session.refresh(recording)
+        transfer_manager.save(recording)
         print(str(recording.id))
     except:
-        transfer_manager.session.rollback()
-        logging.exception('')
-        api_error("couldn't save the file")
-        raise
-    finally:
-        transfer_manager.session.close()
+        return api_error("couldn't save the file")
 
-    return Response(json.dumps({'id': str(recording.id), 'filename': file.filename, 'message': 'upload successfull'}))
+    return Response(json.dumps(recording.as_dict()))
 
 
 @app.route('/api/record/<recording_id>', methods=['GET'])
