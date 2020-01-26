@@ -3,6 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import mne
 
+
+# This script was provided by Anja Meunier for plotting a single Channel
 def plot_single_topomap(data, pos, vmin=None, vmax=None, title=None, cmap_rb=False):
     vmin = np.min(data) if vmin is None else vmin
     vmax = np.max(data) if vmax is None else vmax

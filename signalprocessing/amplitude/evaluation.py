@@ -15,8 +15,8 @@ def main():
     # events_from_annot, event_dict = mne.events_from_annotations(raw)
     # epochs = mne.Epochs(raw=raw, events=events_from_annot, event_id=[10, 20])
     # pos = pos_from_raw(raw.info, None)
-    # sampling_rate = 500.
-    # alpha = 2
+    sampling_rate = 500.
+    alpha = 2
 
     # Preprocessing and loading of data
     raw = mne.io.read_raw_brainvision('../data/20191201_Cybathlon_TF_Session1_Block1.vhdr', preload=True)
@@ -43,7 +43,6 @@ def main():
     data = raw.get_data(picks, start=t_idx[0], stop=t_idx[1])
     pos = pos_from_raw(raw.info, picks)
 
-
     labels = np.zeros(len(epochs.events))
     for i in range(len(epochs.events)):
         for key in epochs[i].event_id:
@@ -69,39 +68,39 @@ def main():
     channel_corr_coeff_fft = []
     channel_corr_coeff_welch = []
     channel_corr_coeff_multitaper = []
-    for channel in range(4):
+    for channel in range(122):
         channel_corr_coeff_fft.append((np.corrcoef(labels, results_fft[:, alpha, channel])[0][1] ** 2) * 100)
         channel_corr_coeff_welch.append((np.corrcoef(labels, results_welch[:, alpha, channel])[0][1] ** 2) * 100)
         channel_corr_coeff_multitaper.append(
             (np.corrcoef(labels, results_multitaper[:, alpha, channel])[0][1] ** 2) * 100)
 
     # # Plotting
-    plot_single_topomap(channel_corr_coeff_fft, pos, title='FFT', cmap_rb=True)
-    plot_single_topomap(channel_corr_coeff_welch, pos, title='Welch', cmap_rb=True)
-    plot_single_topomap(channel_corr_coeff_multitaper, pos, title='Multitaper', cmap_rb=True)
+    # plot_single_topomap(channel_corr_coeff_fft, pos, title='FFT', cmap_rb=True)
+    # plot_single_topomap(channel_corr_coeff_welch, pos, title='Welch', cmap_rb=True)
+    # plot_single_topomap(channel_corr_coeff_multitaper, pos, title='Multitaper', cmap_rb=True)
 
     # Scatterplot
-    # right_feature = []
-    # left_feature = []
-    #
-    # for i in range(300):
-    #     if labels[i] == 20:
-    #         left_feature.append(results_fft[i, alpha, 1])
-    #     else:
-    #         right_feature.append(results_fft[i, alpha, 1])
+    right_feature = []
+    left_feature = []
 
-    # fig = plt.figure()
+    for i in range(20):
+        if labels[i] == 1:
+            left_feature.append(results_fft[i, alpha, 1])
+        else:
+            right_feature.append(results_fft[i, alpha, 1])
+
+    fig = plt.figure()
     # ax.scatter(labels, results_fft[:, alpha, 1], color='r')
     # ax.set_xlabel('Labels')
     # ax.set_ylabel('Features')
     # ax.set_title('FFT')
     # plt.show()
-    # plt.xlabel('Events')
-    # plt.ylabel('Features')
-    # plt.scatter(range(150), right_feature)
-    # plt.scatter(range(150), left_feature)
-    # plt.scatter(labels, results_fft[:, alpha, 1])
-    # plt.show()
+    plt.xlabel('Events')
+    plt.ylabel('Features')
+    # plt.scatter(range(10), right_feature)
+    # plt.scatter(range(10), left_feature)
+    plt.scatter(labels, results_fft[:, alpha, 1])
+    plt.show()
 
 
 if __name__ == "__main__":

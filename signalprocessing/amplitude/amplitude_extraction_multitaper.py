@@ -7,6 +7,8 @@ import numpy as np
 import scipy.signal
 import matplotlib.pyplot as plt
 
+from utils import load_data
+
 brain_freq_bands = {
     'delta': (1, 4),
     'theta': (4, 8),
@@ -14,6 +16,7 @@ brain_freq_bands = {
     'beta': (12, 30),
     'gamma': (30, 45)
 }
+
 
 # Calculates an avg of the power within the given indexes
 def avg_band_amplitude(power, lower_limit_index, upper_limit_index):
@@ -34,17 +37,8 @@ def extract_amplitudes(power, frequencies):
 
 def main():
     # Preprocessing and loading of data
-    raw = mne.io.read_raw_brainvision('../data/20191201_Cybathlon_TF_Session1_RS.vhdr', preload=True)
-    raw.set_eeg_reference(ref_channels='average')
-    raw.rename_channels({'O9': 'I1', 'O10': 'I2'})
-    montage = mne.channels.make_standard_montage('standard_1005')
-    raw.set_montage(montage)
-    raw.rename_channels({'I1': 'O9', 'I2': 'O10'})
-    t_idx = raw.time_as_index([100., 110.])
-    # Remove bad channels from analysis
-    raw.info['bads'] = ['F2', 'FFC2h', 'POO10h', 'O2']
-    picks = mne.pick_types(raw.info, eeg=True, stim=False, exclude='bads')
-    pos = pos_from_raw(raw.info, picks)
+    data, raw, pos, picks = load_data('../data/20191201_Cybathlon_TF_Session1_RS.vhdr', ['F2', 'FFC2h', 'POO10h', 'O2'],
+                               [100., 110.])
 
     # Calculations
     start = time.time()
@@ -54,13 +48,7 @@ def main():
     print("elapsed time:", end - start)
 
     # Plotting
-    # plt.semilogy(frequencies, power.T)
-    # plt.xlabel('Frequency')
-    # plt.ylabel('Power')
-    # plt.show()
-    # plt.plot(amplitudes[2])
-    # plt.show()
-    #plot_single_topomap(amplitudes[2], pos, title='', cmap_rb=True)
+    plot_single_topomap(amplitudes[2], pos, title='', cmap_rb=True)
 
 
 if __name__ == "__main__":
