@@ -35,7 +35,7 @@ def load_TF():
 	#events1 = aggregate_events(events1, True)
 	#events2 = aggregate_events(events2)
 	# Epoch data (cut up data into trials)
-	tmin = 2			# time in seconds after trigger the trial should start
+	tmin = 1			# time in seconds after trigger the trial should start
 	tmax = tmin + 5	 # time in seconds after trigger the trial should end
 	epochs1 = mne.Epochs(raw1, events1, tmin=tmin, tmax=tmax, preload=True, baseline=None, picks=picks)
 	epochs2 = mne.Epochs(raw2, events2, tmin=tmin, tmax=tmax, preload=True, baseline=None, picks=picks)
@@ -51,12 +51,17 @@ def load_TF_2(fname, sub=False):
 	raw.set_montage(montage)
 	raw.rename_channels({'I1': 'O9', 'I2': 'O10'})
 	# Remove bad channels from analysis
-	raw.info['bads'] = ['F2', 'FFC2h', 'TP8']#,'TPP8h']#, 'PPO6h']
+	raw.info['bads'] = ['F2', 'FFC2h', 'TP8', 'Oz', 'OI2h']#,'TPP8h']#, 'PPO6h']
 	picks = mne.pick_types(raw.info, eeg=True, stim=False, exclude='bads')
 	raw.set_eeg_reference(ref_channels="average")
 	# Create events from triggers
 	events = mne.events_from_annotations(raw)[0]
-	events = aggregate_events(events, sub=sub)
+	if sub:
+		events = aggregate_events(events, sub=sub)
+	"""
+	else: # Can be commented out to allow for analysis per task
+		events = aggregate_events(events)
+	"""
 	return raw, picks, events
 def load_CA():
 	raw = mne.io.read_raw_brainvision("data/CA/20191210_Cybathlon_CA_Session1.vhdr", preload=True)
@@ -66,16 +71,46 @@ def load_CA():
 	raw.set_montage(montage)
 	raw.rename_channels({'I1': 'O9', 'I2': 'O10'})
 	# Remove bad channels from analysis
-	raw.info['bads'] = ["PPO9h", "FFT7h"]
+	raw.info['bads'] = ["PPO9h", "FFT7h", "P10", 'Pz']
 	picks = mne.pick_types(raw.info, eeg=True, stim=False, exclude='bads')
 	raw.set_eeg_reference(ref_channels="average")
 	# Create events from triggers
 	events = mne.events_from_annotations(raw)[0]
-	events = aggregate_events(events) # Aggregate
+	#events = aggregate_events(events) # Aggregate
 	tmin = 2			# time in seconds after trigger the trial should start
 	tmax = tmin + 5	 # time in seconds after trigger the trial should end
 	epochs = mne.Epochs(raw, events, tmin=tmin, tmax=tmax, preload=True, baseline=None, picks=picks)
 	return epochs, raw
+
+def load_MB():
+	raw1, picks, events1 = load_MB_2("data/MB/20191104_Cybathlon_Test_1.vhdr")
+	raw2, picks, events2 = load_MB_2("data/MB/20191104_Cybathlon_Test_2.vhdr")
+
+	#events1 = aggregate_events(events1, True)
+	#events2 = aggregate_events(events2)
+	# Epoch data (cut up data into trials)
+	tmin = 2			# time in seconds after trigger the trial should start
+	tmax = tmin + 5	 # time in seconds after trigger the trial should end
+	epochs1 = mne.Epochs(raw1, events1, tmin=tmin, tmax=tmax, preload=True, baseline=None, picks=picks)
+	epochs2 = mne.Epochs(raw2, events2, tmin=tmin, tmax=tmax, preload=True, baseline=None, picks=picks)
+
+	epochs = mne.concatenate_epochs([epochs1,epochs2,epochs3])
+	return epochs, raw1
+def load_MB_2(fname):
+	raw = mne.io.read_raw_brainvision(fname, preload=True)
+	# Set montage (location of channels)
+	raw.rename_channels({'O9': 'I1', 'O10': 'I2'})
+	montage = mne.channels.read_montage("standard_1005")
+	raw.set_montage(montage)
+	raw.rename_channels({'I1': 'O9', 'I2': 'O10'})
+	# Remove bad channels from analysis
+	raw.info['bads'] = []
+	picks = mne.pick_types(raw.info, eeg=True, stim=False, exclude='bads')
+	raw.set_eeg_reference(ref_channels="average")
+	# Create events from triggers
+	events = mne.events_from_annotations(raw)[0]
+	
+	return raw, picks, events
 	
 epochs,raw = load_CA()
 #epochs,raw = load_TF()
@@ -103,6 +138,7 @@ ch_type = mne.channels._get_ch_type(epochs, None)
 picks, pos, merge_grads, names, ch_type = mne.viz.topomap._prepare_topo_plot(epochs, ch_type, None)
 
 # plotting per task  type
+"""
 for trig in epochs.event_id:
 	if trig == "40" or trig == "99999": continue
 	print(trig)
@@ -110,13 +146,7 @@ for trig in epochs.event_id:
 	# Plot psd for the different task types
 	psd_trig, _ = psd_multitaper(epochs[trig], fmax=200)
 	psd_diff = psd_trig.mean(0) - psd_rest.mean(0)
-	"""
-	plt.plot(psd_trig.mean(0)) # Average psds over all epochs
-	plt.show()
 	
-	plt.plot(psd_diff) # Average psds over all epochs
-	plt.show()
-	"""
 	# Plot topographies in selected frequency bands for selected conditions
 	
 	fig = mne.viz.topomap.plot_psds_topomap(psd_trig.mean(0), freqs=freqs, pos=pos, show=False)
@@ -130,28 +160,36 @@ for trig in epochs.event_id:
 	fig.set_size_inches((40,10))
 	fig.savefig("topo_diff_"+str(trig)+".png")
 	#mne.viz.plot_topomap(psd_trig.mean(0)-psd_rest.mean(0), pos=pos)
-	plt.show()
-	
+	#plt.show()
+	plt.clf()
+"""
 
 # psd per electrode per task type
-for pick in ["C3","C4","Pz","Fz","F3"]:
+for pick in ["C3","C4","Fz","F3","FT8","Pz"]:
 	for trig in epochs.event_id:
 		if trig == "1":
 			c = "b"
-		elif trig == "2":
+		elif trig == "10":
 			c = "g"
 		elif trig == "30":
 			c = "r"
 		else:
 			continue
 		axes = plt.axes()
-		fig = epochs[trig].plot_psd(fmax=70.0, ax = axes, show=False, picks = [pick], color=c, area_alpha=0.5)
-		fig.set_label(trig)
+		psd_trig, freqs = psd_multitaper(epochs[trig].pick(pick), fmin=4, fmax=49)
+		psd_mean = np.mean(psd_trig, axis=0)
+		print(psd_mean.shape)
+		psd_std = np.std(psd_trig, axis=0)
+		#plt.errorbar(freqs, psd_mean[0], yerr=[(psd_mean-psd_std)[0],(psd_mean+psd_std)[0]],color=c)
+		plt.errorbar(freqs, psd_mean[0], yerr=psd_std[0],color=c, alpha=0.25)
+		#fig = epochs[trig].plot_psd(fmax=70.0, ax = axes, show=False, picks = [pick], color=c, area_alpha=0.5)
+		#fig.set_label(trig)
 
 	axes.figure.set_size_inches((20,20))
 	axes.figure.savefig(str(pick)+".png")
 	print(pick)
-	plt.show()
+	#plt.show()
+	plt.clf()
 	
 
 # Overall average psd
