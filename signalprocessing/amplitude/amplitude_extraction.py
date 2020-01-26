@@ -63,7 +63,7 @@ def main():
     print("elapsed time:", end - start)
 
     # Plotting
-    plot_single_topomap(amplitudes[ALPHA], pos, title='', cmap_rb=True)
+    plot_single_topomap(amplitudes[ALPHA], pos, title='FFT - TF_Session1_RS - 10s', cmap_rb=True)
 
 
 if __name__ == "__main__":
