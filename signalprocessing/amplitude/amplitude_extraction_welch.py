@@ -17,7 +17,7 @@ brain_freq_bands = {
 }
 
 SAMPLING_RATE = int(sys.argv[1])
-
+ALPHA = 2
 
 # Calculates an avg of the power within the given indexes
 def avg_band_amplitude(power, lower_limit_index, upper_limit_index):
@@ -55,7 +55,7 @@ def main():
     print("elapsed time:", end - start)
 
     # Plotting
-    plot_single_topomap(amplitudes[2], pos, title='', cmap_rb=True)
+    plot_single_topomap(amplitudes[ALPHA], pos, title='', cmap_rb=True)
 
 
 if __name__ == "__main__":

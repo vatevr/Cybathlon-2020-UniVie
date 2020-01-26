@@ -21,6 +21,7 @@ WINDOW_SIZE = float(sys.argv[1])
 SAMPLING_RATE = int(sys.argv[2])
 FREQ_RESOLUTION = 1. / WINDOW_SIZE
 WINDOW_FUNCTION = scipy.signal.hann(M=int(WINDOW_SIZE * SAMPLING_RATE), sym=False)
+ALPHA = 2
 
 
 def apply_window_function(signal, window_function):
@@ -49,11 +50,11 @@ def extract_amplitudes(input_signal):
 
 
 def main():
-    print(WINDOW_SIZE, SAMPLING_RATE)
+    print('Window size: ' + str(WINDOW_SIZE), 'Sampling rate: ' + str(SAMPLING_RATE))
 
     # Preprocessing and loading of data
     data, raw, pos, picks = load_data('../data/20191201_Cybathlon_TF_Session1_RS.vhdr', ['F2', 'FFC2h', 'POO10h', 'O2'],
-                               [100., 110.])
+                                      [100., 110.])
 
     # Calculations
     start = time.time()
@@ -62,7 +63,7 @@ def main():
     print("elapsed time:", end - start)
 
     # Plotting
-    plot_single_topomap(amplitudes[2], pos, title='', cmap_rb=True)
+    plot_single_topomap(amplitudes[ALPHA], pos, title='', cmap_rb=True)
 
 
 if __name__ == "__main__":

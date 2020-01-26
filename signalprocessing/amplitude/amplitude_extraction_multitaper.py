@@ -17,6 +17,8 @@ brain_freq_bands = {
     'gamma': (30, 45)
 }
 
+ALPHA = 2
+
 
 # Calculates an avg of the power within the given indexes
 def avg_band_amplitude(power, lower_limit_index, upper_limit_index):
@@ -38,7 +40,7 @@ def extract_amplitudes(power, frequencies):
 def main():
     # Preprocessing and loading of data
     data, raw, pos, picks = load_data('../data/20191201_Cybathlon_TF_Session1_RS.vhdr', ['F2', 'FFC2h', 'POO10h', 'O2'],
-                               [100., 110.])
+                                      [100., 110.])
 
     # Calculations
     start = time.time()
@@ -48,7 +50,7 @@ def main():
     print("elapsed time:", end - start)
 
     # Plotting
-    plot_single_topomap(amplitudes[2], pos, title='', cmap_rb=True)
+    plot_single_topomap(amplitudes[ALPHA], pos, title='', cmap_rb=True)
 
 
 if __name__ == "__main__":
