@@ -7,6 +7,8 @@ from topomap_plot import plot_single_topomap
 from mne.channels.layout import _auto_topomap_coords as pos_from_raw
 import matplotlib.pyplot as plt
 
+from utils import load_epochs, load_data
+
 
 def main():
     # raw = mne.io.Raw('../data/S4_4chns.raw', preload=True)
@@ -17,31 +19,17 @@ def main():
     # pos = pos_from_raw(raw.info, None)
     sampling_rate = 500.
     alpha = 2
+    bads = ['F2', 'FFC2h', 'POO10h', 'O2']
+    time_index = [100., 110.]
 
     # Preprocessing and loading of data
-    raw = mne.io.read_raw_brainvision('../data/20191201_Cybathlon_TF_Session1_Block1.vhdr', preload=True)
-    raw2 = mne.io.read_raw_brainvision('../data/20191201_Cybathlon_TF_Session1_Block2.vhdr', preload=True)
-    raw.set_eeg_reference(ref_channels='average')
-    raw2.set_eeg_reference(ref_channels='average')
-    raw.rename_channels({'O9': 'I1', 'O10': 'I2'})
-    raw2.rename_channels({'O9': 'I1', 'O10': 'I2'})
-    montage = mne.channels.make_standard_montage('standard_1005')
-    raw.set_montage(montage)
-    raw2.set_montage(montage)
-    raw.rename_channels({'I1': 'O9', 'I2': 'O10'})
-    raw2.rename_channels({'I1': 'O9', 'I2': 'O10'})
-    t_idx = raw.time_as_index([100., 110.])
-    # Remove bad channels from analysis
-    raw.info['bads'] = ['F2', 'FFC2h', 'POO10h', 'O2']
-    raw2.info['bads'] = ['F2', 'FFC2h', 'POO10h', 'O2']
-    picks = mne.pick_types(raw.info, eeg=True, stim=False, exclude='bads')
-    events_from_annot, event_dict = mne.events_from_annotations(raw)
-    events_from_annot2, event_dict2 = mne.events_from_annotations(raw2)
-    epochs1 = mne.Epochs(raw, events_from_annot, picks=picks, event_id=[1, 2])
-    epochs2 = mne.Epochs(raw2, events_from_annot2, picks=picks, event_id=[1, 2])
+    data, raw, pos, picks = load_data('../data/20191201_Cybathlon_TF_Session1_Block1.vhdr',
+                                      bads, time_index)
+    data2, raw2, pos2, picks2 = load_data('../data/20191201_Cybathlon_TF_Session1_Block2.vhdr',
+                                      bads, time_index)
+    epochs1 = load_epochs(raw=raw, picks=picks)
+    epochs2 = load_epochs(raw=raw2, picks=picks)
     epochs = mne.concatenate_epochs([epochs1, epochs2])
-    data = raw.get_data(picks, start=t_idx[0], stop=t_idx[1])
-    pos = pos_from_raw(raw.info, picks)
 
     labels = np.zeros(len(epochs.events))
     for i in range(len(epochs.events)):
