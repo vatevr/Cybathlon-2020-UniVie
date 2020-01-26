@@ -17,3 +17,9 @@ def load_data(path, bads, time_index):
     data = raw.get_data(picks, start=t_idx[0], stop=t_idx[1])
     pos = pos_from_raw(raw.info, picks)
     return data, raw, pos, picks
+
+
+def load_epochs(path):
+    raw = mne.io.Raw(path, preload=True)
+    events_from_annot, event_dict = mne.events_from_annotations(raw)
+    return mne.Epochs(raw=raw, events=events_from_annot, event_id=20)

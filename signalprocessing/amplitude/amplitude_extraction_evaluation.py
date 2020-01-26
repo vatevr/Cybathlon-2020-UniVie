@@ -8,6 +8,8 @@ import mne
 import matplotlib.pyplot as plt
 import seaborn as sea
 
+from utils import load_epochs
+
 brain_freq_bands = {
     'delta': (1, 4),
     'theta': (4, 8),
@@ -15,6 +17,8 @@ brain_freq_bands = {
     'beta': (12, 30),
     'gamma': (30, 45)
 }
+
+SAMPLING_RATE = 500.
 
 
 def apply_window_function(signal, window_size, sampling_rate):
@@ -42,30 +46,18 @@ def extract_amplitudes(input_signal, window_size, sampling_rate):
     return amplitudes
 
 
+def avg_amplitudes_per_epochs(epochs):
+    avg_amplitudes_per_epoch = []
+    for epoch in epochs:
+        samples_per_epoch = epoch.shape[1]
+        window_size = samples_per_epoch / SAMPLING_RATE
+        avg_amplitudes_per_epoch.append(extract_amplitudes(epoch, window_size, SAMPLING_RATE))
+    return avg_amplitudes_per_epoch
+
+
 def main():
-    # Subject 4
-    raw_s4 = mne.io.Raw('../data/S4_4chns.raw', preload=True)
-    events_from_annot, event_dict = mne.events_from_annotations(raw_s4)
-    epochs_s4 = mne.Epochs(raw=raw_s4, events=events_from_annot, event_id=20)
-
-    # Subject 2
-    raw_s2 = mne.io.Raw('../data/S2_4chns.raw', preload=True)
-    events_from_annot, event_dict = mne.events_from_annotations(raw_s2)
-    epochs_s2 = mne.Epochs(raw=raw_s2, events=events_from_annot, event_id=10)
-
-    sampling_rate = 500.
-
-    avg_amplitudes_per_epoch_s2 = []
-    for epoch in epochs_s2:
-        samples_per_epoch = epoch.shape[1]
-        window_size = samples_per_epoch / sampling_rate
-        avg_amplitudes_per_epoch_s2.append(extract_amplitudes(epoch, window_size, sampling_rate))
-
-    avg_amplitudes_per_epoch_s4 = []
-    for epoch in epochs_s4:
-        samples_per_epoch = epoch.shape[1]
-        window_size = samples_per_epoch / sampling_rate
-        avg_amplitudes_per_epoch_s4.append(extract_amplitudes(epoch, window_size, sampling_rate))
+    avg_amplitudes_per_epoch_s2 = avg_amplitudes_per_epochs(load_epochs('../data/S2_4chns.raw'))
+    avg_amplitudes_per_epoch_s4 = avg_amplitudes_per_epochs(load_epochs('../data/S4_4chns.raw'))
 
     result_s2 = np.array(avg_amplitudes_per_epoch_s2)
     result_s4 = np.array(avg_amplitudes_per_epoch_s4)
@@ -93,7 +85,7 @@ def main():
         square=True
     )
 
-    plt.savefig('eval.png')
+    plt.show()
 
 
 if __name__ == "__main__":
