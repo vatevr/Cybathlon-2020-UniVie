@@ -3,26 +3,18 @@ import json
 import logging
 import uuid
 
-from flask import Flask, request, jsonify, Response
+from flask import Flask, request, Response
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import joinedload
 
 from src.model.eeg_recording import EEGRecording
-from src.model.eeg_recording_metadata import EEGRecordingMetadata
+from src.model.eeg_recording_label import EEGRecordingLabel
 from src.service.transfer_manager import TransferManager
+from src.service.base import connection_str
 
 app = Flask(__name__)
 
 transfer_manager = TransferManager()
-
-
-def find_recording(id):
-    rec = transfer_manager.session.query(EEGRecording.id) \
-        .with_entities(EEGRecording.id) \
-        .filter(EEGRecording.id == uuid.UUID(id)) \
-        .scalar()
-
-    return rec is not None
 
 
 def api_error(message):
@@ -57,8 +49,8 @@ def upload_recording():
 
 @app.route('/api/record/<recording_id>', methods=['GET'])
 def download_recording(recording_id):
-    # if not find_recording(recording_id):
-    #     return api_error(f'file with id {recording_id} was not found')
+    if not transfer_manager.find_recording(recording_id):
+        return api_error(f'file with id {recording_id} was not found')
 
     recording: EEGRecording = transfer_manager.session \
         .query(EEGRecording) \
@@ -71,23 +63,23 @@ def download_recording(recording_id):
 
 @app.route('/api/label/<recording_id>', methods=['POST'])
 def mark_metadata(recording_id):
-    if not find_recording(recording_id):
+    if not transfer_manager.find_recording(recording_id):
         return api_error(f'file with id {recording_id} was not found')
 
     content = request.json
 
     recording_uuid = uuid.UUID(recording_id)
 
-    metadata = EEGRecordingMetadata(int(content['subject_id']),
-                                    int(content['paradigm_id']),
-                                    datetime.datetime.now(),
-                                    str(content['comment']),
-                                    str(content['recorded_by']),
-                                    bool(content['with_feedback']),
-                                    recording_uuid)
+    metadata = EEGRecordingLabel(int(content['subject_id']),
+                                 int(content['paradigm_id']),
+                                 datetime.datetime.now(),
+                                 str(content['comment']),
+                                 str(content['recorded_by']),
+                                 bool(content['with_feedback']),
+                                 recording_uuid)
 
-    transfer_manager.session.query(EEGRecordingMetadata) \
-        .filter(EEGRecordingMetadata.recording == recording_uuid) \
+    transfer_manager.session.query(EEGRecordingLabel) \
+        .filter(EEGRecordingLabel.recording == recording_uuid) \
         .delete()
 
     transfer_manager.session.add(metadata)
@@ -96,12 +88,14 @@ def mark_metadata(recording_id):
     transfer_manager.session.refresh(metadata)
     print(str(content))
 
-    return jsonify({'uuid': recording_id})
+    return json.dumps({'uuid': recording_id})
 
 
 @app.route('/api/recordings', methods=['GET'])
 def find_recordings():
-    query = build_query()
+    query = transfer_manager.build_query(subject_id=request.args.get('subject_id'),
+                                         paradigm_id=request.args.get('paradigm_id'),
+                                         recorded_by=request.args.get('recorded_by'))
 
     try:
         result = query.all()
@@ -112,49 +106,17 @@ def find_recordings():
         return api_error('failed to retrieve recordings')
 
 
-def build_query():
-    query = transfer_manager.session \
-        .query(EEGRecording)\
-        .options(joinedload(EEGRecording.eeg_metadata))
-
-    if request.args.get('subject_id'):
-        query = query.filter(
-            EEGRecordingMetadata.subject_id == int(request.args.get('subject_id'))
-        )
-    if request.args.get('paradigm_id'):
-        query = query.filter(
-            EEGRecordingMetadata.paradigm_id == int(request.args.get('paradigm_id')),
-        )
-    if request.args.get('recorded_by'):
-        query = query.filter(
-            EEGRecordingMetadata.recorded_by.ilike(str(request.args.get('recorded_by'))),
-        )
-
-    # TODO query by feedback too
-    return query
-
-
 @app.route('/api/verify', methods=['GET'])
 def verify_connection():
-    connection_str = transfer_manager.connection_str
     verify_engine = create_engine(connection_str)
     engine_connection = verify_engine.connect()
 
-    # Create a metadata instance
-    metadata = MetaData(verify_engine)
-    # Declare a table
-    table = transfer_manager.db.Table('verify_table', metadata,
-                     transfer_manager.db.Column('id', transfer_manager.db.Integer, primary_key=True),
-                     transfer_manager.db.Column('name', transfer_manager.db.String))
 
-    # Create all tables
-    metadata.create_all()
-    tables = []
-    for _t in metadata.tables:
-        tables.append(_t)
-
+    # List all tables
+    tables = verify_engine.table_names()
     engine_connection.close()
-    return Response(json.dumps(tables), mimetype='application/json')
+
+    return Response(json.dumps({'tables': tables}), mimetype='application/json')
 
 
 def main(args=None):

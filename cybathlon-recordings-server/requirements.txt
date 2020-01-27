@@ -4,3 +4,5 @@ psycopg2==2.8.4
 psycopg2-binary==2.8.4
 SQLAlchemy==1.3.11
 flask_restful
+fire==0.1.3
+tabulate==0.8.3

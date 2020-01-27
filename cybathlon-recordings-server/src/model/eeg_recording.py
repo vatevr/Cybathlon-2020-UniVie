@@ -15,7 +15,7 @@ class EEGRecording(Base):
                 server_default=sa_text('uuid_generate_v4()'))
     recording_file = Column(BYTEA(), nullable=False)
     filename = Column(VARCHAR(60), nullable=False)
-    eeg_metadata = relationship("EEGRecordingMetadata", lazy='joined')
+    eeg_metadata = relationship("EEGRecordingLabel", uselist=False, lazy='joined')
 
     def __init__(self, recording_file: bytes, filename: str):
         assert filename, 'filename required'

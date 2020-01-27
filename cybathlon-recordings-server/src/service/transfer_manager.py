@@ -1,7 +1,10 @@
 import logging
 import uuid
 
+from sqlalchemy.orm import joinedload, defer
+
 from src.model.eeg_recording import EEGRecording
+from src.model.eeg_recording_label import EEGRecordingLabel
 from src.service.base import Session, Base, engine
 
 
@@ -32,3 +35,26 @@ class TransferManager:
             raise
         finally:
             self.session.close()
+
+    def build_query(self, subject_id=None, paradigm_id=None, recorded_by=None):
+        query = self.session \
+            .query(EEGRecording) \
+            .join(EEGRecordingLabel, isouter=True) \
+            .options(joinedload(EEGRecording.eeg_metadata), defer(EEGRecording.recording_file))
+
+        if subject_id:
+            query = query.filter(
+                EEGRecordingLabel.subject == int(subject_id)
+            )
+        if paradigm_id:
+            query = query.filter(
+                EEGRecordingLabel.paradigm == int(paradigm_id),
+            )
+        if recorded_by:
+            query = query.filter(
+                EEGRecordingLabel.recorded_by.ilike(str(recorded_by)),
+            )
+
+        # TODO query by feedback too
+        return query
+
