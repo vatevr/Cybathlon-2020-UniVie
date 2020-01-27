@@ -1,12 +1,9 @@
-VERSION ?= latest
+DBPORT=5
 
-.PHONY: build push
+migrate:
+	@echo $(PYTHONPATH)
+	PYTHONPATH=. python3 ./src/tools/migrate.py migrate
 
-build: Dockerfile
-    docker build --no-cache -t vatevr/cybathlon-recordings:$(VERSION) .
-
-push:
-    docker push vatevr/cybathlon-recordings:$(VERSION)
-
-
-default: build
+drop:
+	@echo $(PYTHONPATH)
+	PYTHONPATH=. python3 ./src/tools/migrate.py drop

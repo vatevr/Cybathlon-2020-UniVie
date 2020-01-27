@@ -19,10 +19,10 @@ class Migrations():
             r = [[k, v] for k, v in data.items()]
             print(tabulate(r, tablefmt="fancygrid"))
 
-    def migrate(self):
+    def drop(self):
         session: Session = Session()
 
-        fd = open('../../schema/v1_create_tables.sql', 'r')
+        fd = open('schema/drop_all.sql', 'r')
         raw_sql = fd.read()
         fd.close()
         command = text(raw_sql)
@@ -31,7 +31,27 @@ class Migrations():
             print('executing command')
             print(command)
             result: ResultProxy = session.execute(command)
-            print(result.fetchall())
+            print('successfully completed migrations')
+        except:
+            logging.exception('')
+            session.rollback()
+            session.close()
+
+        session.close()
+
+    def migrate(self):
+        session: Session = Session()
+
+        fd = open('schema/v1_create_tables.sql', 'r')
+        raw_sql = fd.read()
+        fd.close()
+        command = text(raw_sql)
+        # Execute commands
+        try:
+            print('executing command')
+            print(command)
+            result: ResultProxy = session.execute(command)
+            print('successfully completed migrations')
         except:
             logging.exception('')
             session.rollback()
