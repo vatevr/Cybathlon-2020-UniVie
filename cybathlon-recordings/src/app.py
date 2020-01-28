@@ -1,14 +1,16 @@
 import datetime
 import json
+import logging
 import os
+import sys
 import uuid
 import warnings
 
 from flask import Flask, request, jsonify, Response
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import create_engine, text as sa_text, MetaData
+from sqlalchemy import create_engine, text as sa_text, MetaData, ForeignKey
 from sqlalchemy.dialects.postgresql.base import UUID, BYTEA
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, relationship, joinedload
 
 app = Flask(__name__)
 
@@ -38,10 +40,23 @@ class EEGRecording(db.Model):
                    server_default=sa_text('uuid_generate_v4()'))
     recording_file = db.Column(BYTEA(), nullable=False)
     filename = db.Column(db.VARCHAR(60), nullable=False)
+    eeg_metadata = relationship('EEGRecordingMetadata', uselist=False, lazy='joined')
 
     def __init__(self, recording_file, filename):
         self.recording_file = recording_file
         self.filename = filename
+
+    def as_dict(self):
+        base = {
+            'id': str(self.id),
+            'filename': self.filename,
+        }
+
+        if self.eeg_metadata:
+            base.update(self.eeg_metadata.as_dict())
+
+        return base
+
 
 
 class EEGRecordingMetadata(db.Model):
@@ -55,7 +70,7 @@ class EEGRecordingMetadata(db.Model):
     comment = db.Column(db.Text, nullable=True)
     recorded_by = db.Column(db.Unicode(60), nullable=False)
     with_feedback = db.Column(db.Boolean, nullable=False)
-    recording = db.Column(UUID(as_uuid=True), nullable=False)
+    recording = db.Column(UUID(as_uuid=True), ForeignKey(EEGRecording.id), nullable=False, unique=True)
 
     def __init__(self,
                  subject_id,
@@ -89,7 +104,7 @@ class EEGRecordingMetadata(db.Model):
 def find_recording(id):
     rec = session.query(EEGRecording.id) \
         .with_entities(EEGRecording.id) \
-        .filter(EEGRecording.id == uuid.UUID(id))\
+        .filter(EEGRecording.id == uuid.UUID(id)) \
         .scalar()
 
     return rec is not None
@@ -98,35 +113,48 @@ def find_recording(id):
 def api_error(message):
     return Response(json.dumps({'message': message}), status=500)
 
+
 @app.route('/api/record', methods=['POST'])
 def upload_recording():
+    """
+    accepts file uploads to server. maximum limit of the file imposed by postgresql is 1GB
+    operation is transactional
+    :return: success response after the succssful upload, internal server error after failure
+    """
     if 'file' not in request.files:
         return Response(json.dumps({'message': 'internal server error!'}), status=500)
 
     file = request.files['file']
     recording = EEGRecording(recording_file=file.read(), filename=file.filename)
-    session.add(recording)
-    session.commit()
 
-    session.refresh(recording)
+    try:
+        session.add(recording)
+        session.commit()
+        session.refresh(recording)
+        print(str(recording.id))
+    except:
+        session.rollback()
+        logging.exception('')
+        api_error("couldn't save the file")
+        raise
+    finally:
+        session.close()
 
-    print(str(recording.id))
-
-    return Response(json.dumps({'id': str(recording.id), 'message': 'upload successfull'}))
+    return Response(json.dumps({'id': str(recording.id), 'filename': file.filename, 'message': 'upload successfull'}))
 
 
 @app.route('/api/record/<recording_id>', methods=['GET'])
 def download_recording(recording_id):
-    if not find_recording(recording_id):
-        return api_error(f'file with id {recording_id} was not found')
+    # if not find_recording(recording_id):
+    #     return api_error(f'file with id {recording_id} was not found')
 
     recording: EEGRecording = session \
         .query(EEGRecording) \
         .filter(EEGRecording.id == uuid.UUID(recording_id)) \
         .first()
 
-    return Response(recording.recording_file, headers={"Content-disposition":
-                 "attachment; filename=" + recording.filename})
+    return api_error(f'file {recording_id} could not be found') if recording is None \
+        else Response(recording.recording_file, headers={"Content-disposition": "attachment; filename=" + recording.filename})
 
 
 @app.route('/api/label/<recording_id>', methods=['POST'])
@@ -146,7 +174,9 @@ def mark_metadata(recording_id):
                                     bool(content['with_feedback']),
                                     recording_uuid)
 
-    session.query(EEGRecordingMetadata).filter(EEGRecordingMetadata.recording == recording_uuid).delete()
+    session.query(EEGRecordingMetadata) \
+        .filter(EEGRecordingMetadata.recording == recording_uuid) \
+        .delete()
 
     session.add(metadata)
     session.commit()
@@ -159,26 +189,39 @@ def mark_metadata(recording_id):
 
 @app.route('/api/recordings', methods=['GET'])
 def find_recordings():
-    query = session.query(EEGRecordingMetadata)
+    query = build_query()
+
+    try:
+        result = query.all()
+        return Response(json.dumps([row.as_dict() for row in result]), mimetype='application/json')
+    except:
+        logging.exception('')
+
+        return api_error('failed to retrieve recordings')
+
+
+def build_query():
+    fields = [EEGRecording.id, EEGRecording.filename, EEGRecording.eeg_metadata]
+
+    query = session \
+        .query(EEGRecording)\
+        .options(joinedload(EEGRecording.eeg_metadata))
 
     if request.args.get('subject_id'):
         query = query.filter(
             EEGRecordingMetadata.subject_id == int(request.args.get('subject_id'))
         )
-
     if request.args.get('paradigm_id'):
         query = query.filter(
             EEGRecordingMetadata.paradigm_id == int(request.args.get('paradigm_id')),
         )
-
     if request.args.get('recorded_by'):
         query = query.filter(
             EEGRecordingMetadata.recorded_by.ilike(str(request.args.get('recorded_by'))),
         )
 
-    result = query.all()
-
-    return Response(json.dumps([row.as_dict() for row in result]), mimetype='application/json')
+    # TODO query by feedback too
+    return query
 
 
 @app.route('/api/verify', methods=['GET'])
@@ -191,8 +234,8 @@ def verify_connection():
     metadata = MetaData(verify_engine)
     # Declare a table
     table = db.Table('Example', metadata,
-                  db.Column('id', db.Integer, primary_key=True),
-                  db.Column('name', db.String))
+                     db.Column('id', db.Integer, primary_key=True),
+                     db.Column('name', db.String))
 
     # Create all tables
     metadata.create_all()
