@@ -8,7 +8,7 @@ import mne
 import matplotlib.pyplot as plt
 import seaborn as sea
 
-from utils import load_epochs
+from utils import load_epochs_from_path
 
 brain_freq_bands = {
     'delta': (1, 4),
@@ -56,8 +56,8 @@ def avg_amplitudes_per_epochs(epochs):
 
 
 def main():
-    avg_amplitudes_per_epoch_s2 = avg_amplitudes_per_epochs(load_epochs(path='../data/S2_4chns.raw'))
-    avg_amplitudes_per_epoch_s4 = avg_amplitudes_per_epochs(load_epochs(path='../data/S4_4chns.raw'))
+    avg_amplitudes_per_epoch_s2 = avg_amplitudes_per_epochs(load_epochs_from_path(path='../data/S2_4chns.raw', events=20))
+    avg_amplitudes_per_epoch_s4 = avg_amplitudes_per_epochs(load_epochs_from_path(path='../data/S4_4chns.raw', events=20))
 
     result_s2 = np.array(avg_amplitudes_per_epoch_s2)
     result_s4 = np.array(avg_amplitudes_per_epoch_s4)
