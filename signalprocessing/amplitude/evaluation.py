@@ -15,6 +15,7 @@ def main():
     alpha = 2
     number_channels = 122
     bads_TF = ['F2', 'FFC2h', 'POO10h', 'O2']
+    bads_SAZ = ["PPO9h", "FFT7h", "P10", 'Pz']
 
     # Loading data -> 4chns
     # raw = mne.io.Raw('../data/S4_4chns.raw', preload=True)
@@ -25,21 +26,22 @@ def main():
     # pos = pos_from_raw(raw.info, None)
 
     # Preprocessing and loading of data -> TF
-    data, raw, pos, picks = load_data('../data/20191201_Cybathlon_TF_Session1_Block1.vhdr',
-                                      bads_TF, None)
-    data2, raw2, pos2, picks2 = load_data('../data/20191201_Cybathlon_TF_Session1_Block2.vhdr',
-                                          bads_TF, None)
-    epochs1 = load_epochs_from_raw(raw=raw, picks=picks, events=[1, 2], times=[1, 6])
-    epochs2 = load_epochs_from_raw(raw=raw2, picks=picks, events=[1, 2], times=[1, 6])
-    epochs = mne.concatenate_epochs([epochs1, epochs2])
+    # data, raw, pos, picks = load_data('../data/20191201_Cybathlon_TF_Session1_Block1.vhdr',
+    #                                   bads_TF, None)
+    # data2, raw2, pos2, picks2 = load_data('../data/20191201_Cybathlon_TF_Session1_Block2.vhdr',
+    #                                       bads_TF, None)
+    # epochs1 = load_epochs_from_raw(raw=raw, picks=picks, events=[1, 2], times=[1, 6])
+    # epochs2 = load_epochs_from_raw(raw=raw2, picks=picks, events=[1, 2], times=[1, 6])
+    # epochs = mne.concatenate_epochs([epochs1, epochs2])
 
     # Preprocessing and loading of data -> SZ
-    # data, raw, pos, picks = load_data('../data/20191210_Cybathlon_SAZ_Session1.vhdr',
-    #                                   [], None)
-    # epochs = load_epochs_from_raw(raw=raw, picks=picks, events=[1, 2], times=[1, 6])
+    data, raw, pos, picks = load_data('../data/20191210_Cybathlon_SAZ_Session1.vhdr',
+                                      bads_SAZ, None)
+    epochs = load_epochs_from_raw(raw=raw, picks=picks, events=[3, 4], times=[1, 6])
 
     number_events = len(epochs.events)
 
+    # Extract event labels
     labels = np.zeros(len(epochs.events))
     for i in range(len(epochs.events)):
         for key in epochs[i].event_id:
@@ -69,23 +71,23 @@ def main():
     channel_corr_coeff_welch = []
     channel_corr_coeff_multitaper = []
     for channel in range(number_channels):
-        channel_corr_coeff_fft.append((np.corrcoef(labels, results_fft[:, alpha, channel])[0][1] ** 2))
-        channel_corr_coeff_welch.append((np.corrcoef(labels, results_welch[:, alpha, channel])[0][1] ** 2))
+        channel_corr_coeff_fft.append((np.corrcoef(labels, results_fft[:, alpha, channel])[0][1] ** 2) * 100)
+        channel_corr_coeff_welch.append((np.corrcoef(labels, results_welch[:, alpha, channel])[0][1] ** 2) * 100)
         channel_corr_coeff_multitaper.append(
-            (np.corrcoef(labels, results_multitaper[:, alpha, channel])[0][1] ** 2))
+            (np.corrcoef(labels, results_multitaper[:, alpha, channel])[0][1] ** 2) * 100)
 
-    # # Plotting
-    plot_single_topomap(channel_corr_coeff_fft, pos, title='FFT - TF', cmap_rb=True)
-    plot_single_topomap(channel_corr_coeff_welch, pos, title='Welch - TF', cmap_rb=True)
-    plot_single_topomap(channel_corr_coeff_multitaper, pos, title='Multitaper - TF', cmap_rb=True)
+    # Plotting
+    plot_single_topomap(channel_corr_coeff_fft, pos, title='FFT ', cmap_rb=True)
+    plot_single_topomap(channel_corr_coeff_welch, pos, title='Welch', cmap_rb=True)
+    plot_single_topomap(channel_corr_coeff_multitaper, pos, title='Multitaper', cmap_rb=True)
 
     # Scatterplot (uncomment for scatterplots )
     right_feature = []
     left_feature = []
 
     # Set channel index for motorcortex relevant channels, depends on dataset
-    c3 = 1
-    c4 = 2
+    c3 = 4
+    c4 = 5
     #
     # for i in range(number_events):
     #     if labels[i] == 1:
@@ -93,21 +95,17 @@ def main():
     #     else:
     #         right_feature.append(results_fft[i, alpha, c4])
 
-    # fig = plt.figure()
-    # ax.set_xlabel('Labels')
-    # ax.set_ylabel('Features')
-    # ax.set_title('FFT')
-
     plt.xlabel('Events')
     plt.ylabel('Features')
+    plt.title('C3')
 
     # Plot all events and their amplitudes
     # plt.scatter(range(int(number_events/2)), right_feature)
     # plt.scatter(range(int(number_events/2)), left_feature)
 
     # Plot amplitudes against their labels
-    # plt.scatter(labels, results_fft[:, alpha, c4])
-    # plt.show()
+    # plt.scatter(labels, results_fft[:, alpha, c3])
+    plt.show()
 
 
 if __name__ == "__main__":

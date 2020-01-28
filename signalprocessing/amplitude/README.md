@@ -3,9 +3,9 @@ This package contains scripts for analyzing eeg signals and extracting the avera
 There are three different implementations for this amplitude extraction, some of which require command line arguments:
  * ```amplitude_extraction.py``` (FFT) - **Cmd Line Arguments**: 1. Window-Size (eg 10.) 2. Sample rate (eg. 500)
  * ```amplitude_extraction_welch.py``` (Welch method) **Cmd Line Arguments**: 1. Sample rate (eg. 500)
- * ```amplitude_extraction_multitaper.py``` ()Multitaper) 
+ * ```amplitude_extraction_multitaper.py``` (Multitaper Method)
  
- It also contains an OpenVibe box with the same functionality that can be hooked into an OpenVibe pipeline, and uses the FFT algorithm. 
+ It also contains an OpenVibe box ```avg_amplitude_box.py``` with the same functionality that can be hooked into an OpenVibe pipeline, and uses the FFT algorithm. 
  
  There are three evaluation scripts for the three algorithms, which calculates the correlation coefficient for eeg data between two different subjects, and plots a heatmap. The algorithms are rewritten to not need any cmd line arguments, as it is just for evaluation.
 
