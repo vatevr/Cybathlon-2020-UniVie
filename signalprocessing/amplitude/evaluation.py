@@ -17,12 +17,12 @@ def main():
     bads_TF = ['F2', 'FFC2h', 'POO10h', 'O2']
 
     # Loading data -> 4chns
-    raw = mne.io.Raw('../data/S4_4chns.raw', preload=True)
-    montage = mne.channels.make_standard_montage('standard_1005')
-    raw.set_montage(montage)
-    events_from_annot, event_dict = mne.events_from_annotations(raw)
-    epochs = mne.Epochs(raw=raw, events=events_from_annot, event_id=[10, 20])
-    pos = pos_from_raw(raw.info, None)
+    # raw = mne.io.Raw('../data/S4_4chns.raw', preload=True)
+    # montage = mne.channels.make_standard_montage('standard_1005')
+    # raw.set_montage(montage)
+    # events_from_annot, event_dict = mne.events_from_annotations(raw)
+    # epochs = mne.Epochs(raw=raw, events=events_from_annot, event_id=[10, 20])
+    # pos = pos_from_raw(raw.info, None)
 
     # Preprocessing and loading of data -> TF
     data, raw, pos, picks = load_data('../data/20191201_Cybathlon_TF_Session1_Block1.vhdr',
@@ -79,9 +79,11 @@ def main():
     plot_single_topomap(channel_corr_coeff_welch, pos, title='Welch - TF', cmap_rb=True)
     plot_single_topomap(channel_corr_coeff_multitaper, pos, title='Multitaper - TF', cmap_rb=True)
 
-    # Scatterplot
+    # Scatterplot (uncomment for scatterplots )
     right_feature = []
     left_feature = []
+
+    # Set channel index for motorcortex relevant channels, depends on dataset
     c3 = 1
     c4 = 2
     #
@@ -92,15 +94,18 @@ def main():
     #         right_feature.append(results_fft[i, alpha, c4])
 
     # fig = plt.figure()
-    # ax.scatter(labels, results_fft[:, alpha, 1], color='r')
     # ax.set_xlabel('Labels')
     # ax.set_ylabel('Features')
     # ax.set_title('FFT')
-    # plt.show()
+
     plt.xlabel('Events')
     plt.ylabel('Features')
+
+    # Plot all events and their amplitudes
     # plt.scatter(range(int(number_events/2)), right_feature)
     # plt.scatter(range(int(number_events/2)), left_feature)
+
+    # Plot amplitudes against their labels
     # plt.scatter(labels, results_fft[:, alpha, c4])
     # plt.show()
 
