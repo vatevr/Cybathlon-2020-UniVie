@@ -104,7 +104,7 @@ def main():
     # plt.scatter(range(int(number_events/2)), left_feature)
 
     # Plot amplitudes against their labels
-    # plt.scatter(labels, results_fft[:, alpha, c3])
+    plt.scatter(labels, results_fft[:, alpha, c3])
     plt.show()
 
 

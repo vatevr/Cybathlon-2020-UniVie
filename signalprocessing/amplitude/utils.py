@@ -26,6 +26,8 @@ def load_data(path, bads, time_index):
 def load_epochs_from_path(path, events):
     raw = mne.io.Raw(path, preload=True)
     events_from_annot, event_dict = mne.events_from_annotations(raw)
+    if not events:
+        return mne.Epochs(raw=raw, events=events_from_annot)
     return mne.Epochs(raw=raw, events=events_from_annot, event_id=events)
 
 

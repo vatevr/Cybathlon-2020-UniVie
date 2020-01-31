@@ -51,8 +51,8 @@ def avg_amplitudes_per_epochs(epochs):
 
 
 def main():
-    avg_amplitudes_per_epoch_s2 = avg_amplitudes_per_epochs(load_epochs_from_path(path='../data/S2_4chns.raw'))
-    avg_amplitudes_per_epoch_s4 = avg_amplitudes_per_epochs(load_epochs_from_path(path='../data/S4_4chns.raw'))
+    avg_amplitudes_per_epoch_s2 = avg_amplitudes_per_epochs(load_epochs_from_path(path='../data/S2_4chns.raw', events=20))
+    avg_amplitudes_per_epoch_s4 = avg_amplitudes_per_epochs(load_epochs_from_path(path='../data/S4_4chns.raw', events=20))
 
     result_s2 = np.array(avg_amplitudes_per_epoch_s2)
     result_s4 = np.array(avg_amplitudes_per_epoch_s4)
