@@ -8,6 +8,8 @@ import scipy.signal
 import matplotlib.pyplot as plt
 import seaborn as sea
 
+from utils import load_epochs_from_path
+
 brain_freq_bands = {
     'delta': (1, 4),
     'theta': (4, 8),
@@ -34,27 +36,17 @@ def extract_amplitudes(power, frequencies):
     return amplitudes
 
 
+def avg_amplitudes_per_epochs(epochs):
+    avg_amplitudes_per_epoch = []
+    for i in range(len(epochs.events)):
+        power, frequencies = mne.time_frequency.psd_multitaper(inst=epochs[i])
+        avg_amplitudes_per_epoch.append(extract_amplitudes(power[0], frequencies))
+    return avg_amplitudes_per_epoch
+
+
 def main():
-    # Subject 4
-    raw_s4 = mne.io.Raw('../data/S4_4chns.raw', preload=True)
-    events_from_annot, event_dict = mne.events_from_annotations(raw_s4)
-    epochs_s4 = mne.Epochs(raw=raw_s4, events=events_from_annot, event_id=20)
-
-    # Subject 2
-    raw_s2 = mne.io.Raw('../data/S2_4chns.raw', preload=True)
-    events_from_annot, event_dict = mne.events_from_annotations(raw_s2)
-    epochs_s2 = mne.Epochs(raw=raw_s2, events=events_from_annot, event_id=20)
-
-    avg_amplitudes_per_epoch_s2 = []
-    for i in range(len(epochs_s2.events)):
-        power, frequencies = mne.time_frequency.psd_multitaper(inst=epochs_s2[i])
-        avg_amplitudes_per_epoch_s2.append(extract_amplitudes(power[0], frequencies))
-
-    avg_amplitudes_per_epoch_s4 = []
-    for i in range(len(epochs_s4.events)):
-        power, frequencies = mne.time_frequency.psd_multitaper(inst=epochs_s4[i])
-        avg_amplitudes_per_epoch_s4.append(extract_amplitudes(power[0], frequencies))
-
+    avg_amplitudes_per_epoch_s2 = avg_amplitudes_per_epochs(load_epochs_from_path(path='../data/S2_4chns.raw', events=20))
+    avg_amplitudes_per_epoch_s4 = avg_amplitudes_per_epochs(load_epochs_from_path(path='../data/S4_4chns.raw', events=20))
     result_s2 = np.array(avg_amplitudes_per_epoch_s2)
     result_s4 = np.array(avg_amplitudes_per_epoch_s4)
 
@@ -69,7 +61,7 @@ def main():
             corr1 = []
             for band2 in range(5):
                 for channel2 in range(4):
-                    corr1.append((np.corrcoef(x=result_s2[:, band1, channel1], y=result_s2[:, band2, channel2])[0][
+                    corr1.append((np.corrcoef(x=result_s2[:, band1, channel1], y=result_s4[:, band2, channel2])[0][
                                       1] ** 2) * 100)
             corr.append(corr1)
 
@@ -80,7 +72,7 @@ def main():
         square=True
     )
 
-    plt.savefig('eval.png')
+    plt.show()
 
 
 if __name__ == "__main__":
