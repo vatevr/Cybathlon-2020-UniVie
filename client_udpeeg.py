@@ -8,9 +8,6 @@ from time import sleep, time
 UDP_IP = "192.168.200.240"
 UDP_PORT = 10015  # NeurOne
 
-TCP_IP = "192.168.200.240"
-TCP_PORT = 10058  # Openvibe
-
 n_chn = 127
 n_sample_per_block = 4
 windowlength = 1            # window length in seconds
