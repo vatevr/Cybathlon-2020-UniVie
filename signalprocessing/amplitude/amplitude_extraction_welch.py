@@ -19,6 +19,7 @@ brain_freq_bands = {
 SAMPLING_RATE = int(sys.argv[1])
 ALPHA = 2
 
+
 # Calculates an avg of the power within the given indexes
 def avg_band_amplitude(power, lower_limit_index, upper_limit_index):
     range = power[:, lower_limit_index:upper_limit_index]
@@ -28,8 +29,6 @@ def avg_band_amplitude(power, lower_limit_index, upper_limit_index):
 # Returns for each brain wave bandwidth the average amplitude within that bandwidth for each electrode
 def extract_amplitudes(data):
     frequencies, power = calculate_psd(data)
-    plt.plot(power)
-    plt.show()
     rescaled_power = 10 * np.log10(power)
     amplitudes = []
     for wave, band_range in brain_freq_bands.items():
@@ -46,7 +45,7 @@ def calculate_psd(input_signal):
 def main():
     # Preprocessing and loading of data
     data, raw, pos, picks = load_data('../data/20191201_Cybathlon_TF_Session1_RS.vhdr', ['F2', 'FFC2h', 'POO10h', 'O2'],
-                                 [100., 110.])
+                                      [100., 110.])
 
     # Calculations
     start = time.time()

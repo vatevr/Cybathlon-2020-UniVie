@@ -5,8 +5,8 @@ import amplitude_extraction as sp #Melanie Balaz' amplitude_extraction script
 from scipy.io import loadmat
 from scipy.linalg import eigh
 from mne.filter import filter_data
-from mne import cov as mne_cov
-from feature_selector import feature_selector
+#from mne import cov as mne_cov
+#from feature_selector import feature_selector
 from scipy import linalg
 
 #from sklearn.preprocessing import scale

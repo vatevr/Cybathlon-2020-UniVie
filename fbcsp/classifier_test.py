@@ -106,19 +106,6 @@ def compare_CSP_with_FBCSP(raw_data) :
     
 def test(raw) :
     
-    tmin, tmax = -1., 4.
-    event_id = dict(hands=2, feet=3)
-    subject = 1
-    runs = [6, 10, 14]  # motor imagery: hands vs feet
-    
-    raw_fnames = eegbci.load_data(subject, runs)
-    raw = concatenate_raws([read_raw_edf(f, preload=True) for f in raw_fnames])
-    eegbci.standardize(raw)  # set channel names
-    montage = make_standard_montage('standard_1005')
-    raw.set_montage(montage)
-    
-    # strip channel names of "." characters
-    raw.rename_channels(lambda x: x.strip('.'))
     events, _ = events_from_annotations(raw, event_id=dict(T1=1, T2=2))
     
     preproc = Preproc(fs=161, windowlength=1, bands='all')
@@ -150,7 +137,7 @@ def test(raw) :
     svm_mne = LinearSVC(penalty=penalty)
     csp = CSP()
     lda = classifier(estimator='svm', components=4, featurebands=6, bands='all')
-    mycsp = FBCSP(filter_target='epoched', method='avg_power', bands=None, sum_class=False)
+    mycsp = FBCSP(filter_target='epoched', method='avg_amplitude', bands=None, sum_class=False)
     #fbcsp.fit(epochs_data_train, labels)
     
     #scaler = StandardScaler()
@@ -320,6 +307,8 @@ if __name__ == '__main__':
     raw_fnames = eegbci.load_data(subject, runs)
     raw = concatenate_raws([read_raw_edf(f, preload=True) for f in raw_fnames])
     
+    #test
+    test(raw)
     
     # strip channel names of "." characters
     raw.rename_channels(lambda x: x.strip('.'))
@@ -361,8 +350,6 @@ if __name__ == '__main__':
     #for component in range(mycsp.filters_.shape[0]) :
     #    plot_single_topomap(mne_csp.filters_[component], pos, vmin=None, vmax=None, title='eegbci dataset fbcsp filtered, component ' + str(component))
     
-    #test
-    #test(raw)
     #compare_CSP_with_FBCSP(raw) 
     """
     print(score_window(epochs_data_train[3]))
