@@ -1,11 +1,11 @@
 import sys
 import time
-from topomap_plot import plot_single_topomap
+#from topomap_plot import plot_single_topomap
 from mne.channels.layout import _auto_topomap_coords as pos_from_raw
 import mne
 import numpy as np
 import scipy.signal
-from utils import load_data
+#from utils import load_data
 import matplotlib.pyplot as plt
 
 brain_freq_bands = {

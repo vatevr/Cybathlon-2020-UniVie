@@ -4,14 +4,20 @@ import numpy as np
 from queue import Queue
 from threading import Thread
 from time import sleep, time
+from signalprocessing.peakfrequency.peak_frequency import PeakFrequency
+from signalprocessing import signal_tools
 
-UDP_IP = "192.168.200.240"
-UDP_PORT = 10015  # NeurOne
+# load .env file
+from os import getenv
+from dotenv import load_dotenv
+load_dotenv()
 
-n_chn = 127
-n_sample_per_block = 4
-windowlength = 1            # window length in seconds
-fs = 500                    # sampling frequency of NeurOne
+n_chn = int(getenv('N_CHN'))
+n_sample_per_block = int(getenv('N_SAMPLE_PER_BLOCK'))
+windowlength = int(getenv('WINDOWLENGTH'))            # window length in seconds
+fs = int(getenv('FS'))                    # sampling frequency of NeurOne
+peak_frequency_o = PeakFrequency(channels=n_chn - 1, samples=(windowlength * fs), fs=fs)
+
 
 
 def receive(sock, data_queue, trigger_queue):
@@ -70,8 +76,13 @@ def process_window(data_queue, trigger_queue):
 
 
 def do_stuff(window) :
-    #print("ready to process window of length {} and {} ".format(window.shape, window))
-    sleep(0.22)
+
+    # signal processing
+    peak_frequency_result = peak_frequency_o.transform(x=window)
+    welch = signal_tools.extract_amplitudes_welch(window, (windowlength * fs))
+
+    print('{} {}'.format(peak_frequency_result.shape, welch.shape))
+
     return
 
 def convert_bytes(data, cnt):
@@ -89,9 +100,8 @@ def convert_bytes(data, cnt):
 
 
 if __name__ == '__main__':
-
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # Internet
-    sock.bind((UDP_IP, UDP_PORT))
+    sock.bind((getenv('UDP_IP'), int(getenv('UDP_PORT'))))
 
     # sock_tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # SOCK_DGRAM
     # tcp_server_address = (TCP_IP, TCP_PORT)
@@ -103,7 +113,6 @@ if __name__ == '__main__':
     data_queue = Queue(maxsize=0) #setting the queue maxsize to 0 makes it "infinite". PriorityQueue could be interesting to maintain ordering of UDP packets.
     trigger_queue = Queue(maxsize=0)
 
-    #receive(sock, data_queue, trigger_queue)
 
     receiver_thread = Thread(target=receive, args=(sock, data_queue, trigger_queue))
     consumer_thread = Thread(target=process_window, args=(data_queue, trigger_queue))
