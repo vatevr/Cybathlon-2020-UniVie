@@ -45,6 +45,7 @@ class PeakFrequency:
 
     def transform_dict(self, x, method='median'):
         x = np.asarray(x)
+        x = x.T
         if x.shape[0] != self.samples and x.shape[1] != self.channels:
             raise ValueError("configs (", self.channels, ",", self.samples, ") do not match input dims ", x.shape)
         if np.iscomplexobj(x):
@@ -75,4 +76,4 @@ class PeakFrequency:
             signal[from_val:to_val, :] = H[from_val:to_val, :]
             signal = signal.T.dot(self.idft).T
             instant_frequency.append(self.peak_method(signal, method))
-        return instant_frequency
+        return np.array(instant_frequency)
