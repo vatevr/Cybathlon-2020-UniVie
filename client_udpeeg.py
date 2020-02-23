@@ -6,6 +6,7 @@ from threading import Thread
 from time import sleep, time
 from signalprocessing.peakfrequency.peak_frequency import PeakFrequency
 from signalprocessing import signal_tools
+from riemannianClassifier.classifier import riemannianClassifier
 
 # load .env file
 from os import getenv
@@ -17,7 +18,9 @@ n_sample_per_block = int(getenv('N_SAMPLE_PER_BLOCK'))
 windowlength = int(getenv('WINDOWLENGTH'))            # window length in seconds
 fs = int(getenv('FS'))                    # sampling frequency of NeurOne
 peak_frequency_o = PeakFrequency(channels=n_chn - 1, samples=(windowlength * fs), fs=fs)
-
+clf = riemannianClassifier()
+clf.load_self() #assuming that we have a pre-trained classifier
+    
 
 
 def receive(sock, data_queue, trigger_queue):
@@ -83,7 +86,12 @@ def do_stuff(window) :
 
     print('{} {}'.format(peak_frequency_result.shape, welch.shape))
 
-    return
+    binary_probabilities = clf.predict_proba(window) #compute class probabilities for binary classification
+
+    # TO-DO pass probabilities to feedback/UI
+    # ...
+
+    return 
 
 def convert_bytes(data, cnt):
     np_samples = np.zeros([n_sample_per_block, n_chn])

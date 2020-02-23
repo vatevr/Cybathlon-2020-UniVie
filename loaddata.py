@@ -22,8 +22,4 @@ def loadeeg():
     eeg_data = np.hstack([eeg_data_l, np.zeros((eeg_data_l.shape[0], 500)),
                           eeg_data_r])
 
-<<<<<<< HEAD
     return eeg_data
-=======
-    return eeg_data
->>>>>>> eb755186a06621abb8f6d9fe0c791a328d20d8e8
