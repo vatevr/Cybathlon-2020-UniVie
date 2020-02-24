@@ -114,8 +114,9 @@ def test(raw) :
     # Apply band-pass filter
     raw.filter(7., 30., fir_design='firwin', skip_by_annotation='edge')
     
+    raw.rename_channels(lambda x: x.strip('.'))
     
-    picks = pick_types(raw.info, meg=False, eeg=True, stim=False, eog=False, exclude='bads')
+    picks = pick_types(raw.info, meg=False, eeg=True, stim=False)
         
     # Read epochs (train will be done only between 1 and 2s)
     # Testing will be done with a running classifier
@@ -137,7 +138,7 @@ def test(raw) :
     svm_mne = LinearSVC(penalty=penalty)
     csp = CSP()
     lda = classifier(estimator='svm', components=4, featurebands=6, bands='all')
-    mycsp = FBCSP(filter_target='epoched', method='avg_amplitude', bands=None, sum_class=False)
+    mycsp = FBCSP(filter_target='epoched', method='avg_power', bands=None, sum_class=False)
     #fbcsp.fit(epochs_data_train, labels)
     
     #scaler = StandardScaler()
@@ -182,10 +183,10 @@ def test(raw) :
         svm_mne.fit(X_train_mne, y_train)
         svm.fit(X_train_csp, y_train)
         
-        import pdb
-        pdb.set_trace()
+        #import pdb
+        #pdb.set_trace()
         
-        lda.fit(epochs_data_train[train_idx], raw_bpfiltered[:, train_idx, :, :], y_train)
+        lda.fit(epochs_data_train[train_idx], raw_bpfiltered[:, train_idx, :, :], y_train, epochs.info, layout=read_layout('EEG1005'))
     
     
         score_this_window_fbcsp = []
@@ -337,7 +338,7 @@ if __name__ == '__main__':
     
     
     mne_csp.fit_transform(epochs.get_data(), labels)
-    mne_csp.plot_patterns(epochs.info, ch_type='eeg', units='Patterns (arbitrary)', size=1.5, layout=layout, title='MNE CSP 7-30 eegbci')
+    #mne_csp.plot_patterns(epochs.info, ch_type='eeg', units='Patterns (arbitrary)', size=1.5, layout=layout, title='MNE CSP 7-30 eegbci')
     
     mycsp.plot_patterns(epochs.info, layout=layout, title='Custom CSP eegbci dataset')
 

@@ -236,9 +236,9 @@ class FBCSP :
         """
         :param X : numpy array of epoched eeg data. Shape: epochs * channels/components * samples
         """
-        import pdb
-        pdb.set_trace()
-        bandavg = np.zeros((4, X.shape[0], X.shape[1]))
+        #import pdb
+        #pdb.set_trace()
+        bandavg = np.zeros((5, X.shape[0], X.shape[1]))
         for epoch in range(X.shape[0]) :
             bandavg[:,epoch,:] = sp.extract_amplitudes(X[epoch,:,:])
 
@@ -314,10 +314,11 @@ class FBCSP :
                 #TODO
                 print('TODO')
                 
-    def plot_patterns(self, info, layout=None, title=None) : #shamelessly adapted from mne
+    def plot_patterns(self, info, layout=None, title='MNE CSP 7-30 eegbci') : #shamelessly adapted from mne
         from mne import EvokedArray
         import copy as cp
-        
+        #import pdb
+        #pdb.set_trace()
         info = cp.deepcopy(info)
         info['sfreq'] = 1.
         

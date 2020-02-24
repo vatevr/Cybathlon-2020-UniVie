@@ -2,15 +2,15 @@ from sklearn.svm import SVC
 import numpy as np
 from sklearn.model_selection import cross_val_score
 from sklearn.feature_selection import mutual_info_regression
+import math
 
 class feature_selector :
     
-    def __init__(self, features=6, method='linear'):
+    def __init__(self, features=6, method='linear', drops=None):
         """
-        :param components : int. number of CSP components the filter will contain
-        :attribute filters_ : numpy array. CSP filter.  Shape: channels * samples
+        :param features : int. number of CSP components the filter will contain
         """
-        
+        self.drops = drops
         self.features  = features
         self.method = method
         
@@ -47,16 +47,27 @@ class feature_selector :
         """
         :param csp_filters : numpy array of shape bands *  csp_components * channels
         """
+        picks = np.zeros(((csp_filter.shape[1]*self.features)-len(self.drops), csp_filter.shape[2]))
+        band_ind = self.bands_
         #import pdb
         #pdb.set_trace()
-        picks = np.zeros((csp_filter.shape[1]*self.features, csp_filter.shape[2]))
-        band_ind = self.bands_
-        
+        i = 0
         for feature in range(self.features) :
             for component in range(csp_filter.shape[1]) :
-                picks[(feature*csp_filter.shape[1])+component, :] = csp_filter[band_ind[feature], component, :]
+                should_drop = False
+                for drop in self.drops :
+                    band = drop//10 # floor division to avoid importing math.floor
+                    comp = drop%10
+                    if feature == band and component == comp:
+                        should_drop = True
+                if should_drop == True:
+                    continue
+                else :
+                    picks[i, :] = csp_filter[band_ind[feature], component, :]
+                    i += 1
         return picks
     
+            
     """
     def fit_transform(self, X_csp, y) :
         self.fit(X_csp, y)
