@@ -142,3 +142,6 @@ class classifier :
             
         score = clf.score(filtered, y)
         return score
+
+    def predict(self, X):
+        return self.classifier_.predict(X)
