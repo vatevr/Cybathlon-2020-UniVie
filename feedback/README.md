@@ -2,10 +2,10 @@
 
 Displays confidence values for each class (left, right, headlights, rest).
 
-Protocol: LSL
-Input: signal with 4 channels (1: left, 2: right, 3: headlights, 4: rest)
-Value range: 0-100
-Update freq.: every 100ms
+Protocol: LSL  
+Input: signal with 4 channels (1: left, 2: right, 3: headlights, 4: rest)  
+Value range: 0-100  
+Update freq.: every 100ms  
 
 How to:
 - Add and connect a "LSL Export (Gipsa)" box in the OpenViBE scenario
