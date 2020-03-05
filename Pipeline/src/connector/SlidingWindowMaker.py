@@ -20,6 +20,7 @@ class SlidingWindowMaker:
             return tmpbuf
         else:
             self.windowBuffer.append(sample)
+            return None
 
     def check_full(self):
         if len(self.windowBuffer) >= self.windowSize :

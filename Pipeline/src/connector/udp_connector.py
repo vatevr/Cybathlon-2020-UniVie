@@ -4,10 +4,11 @@ from queue import Queue
 from threading import Thread
 from time import sleep, time
 import numpy as np
+from Pipeline.src.connector.SlidingWindowMaker import SlidingWindowMaker
 
 
 class UdpConnector:
-    def __init__(self, batch_received, port=10015, host="192.168.200.240"):
+    def __init__(self, batch_received, port=10015, host="192.168.200.240", fs=500, windowlength=1):
         self.port = port
         self.host = host
 
@@ -17,8 +18,8 @@ class UdpConnector:
         # 
         self.n_chn = 127
         self.n_sample_per_block = 4
-        self.windowlength = 1  # window length in seconds
-        self.fs = 500  # sampling frequency of NeurOne
+        self.windowlength = windowlength  # window length in seconds
+        self.fs = fs  # sampling frequency of NeurOne
 
     def receive(self, sock, data_queue, trigger_queue):
 
@@ -52,7 +53,12 @@ class UdpConnector:
 
 
     def process_window(self, data_queue, trigger_queue):
-        cnt = 0
+        windowmaker = SlidingWindowMaker(windowSize=self.windowlength, fs=self.fs)
+        while True :
+            window = windowmaker.update(data_queue.get(block=True))
+            if window is not None:
+                self.on_batch_received(window.T)
+        """
         window = np.zeros([self.windowlength * self.fs, self.n_chn - 1])
         while True:
             while cnt < self.windowlength * self.fs:
@@ -61,13 +67,13 @@ class UdpConnector:
                 for sample in range(block.shape[0]):
                     window[cnt, :] = block[sample, :-1]
                     cnt += 1
-            
+
             self.on_batch_received(window.T)
-            
+       
             stop = time()
             print(stop - start)
             cnt = 0
-
+         """
 
     def convert_bytes(self, data, cnt):
         np_samples = np.zeros([self.n_sample_per_block, self.n_chn])
