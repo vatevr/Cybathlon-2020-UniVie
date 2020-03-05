@@ -1,7 +1,7 @@
 import numpy as np
 #import sys
 #import matplotlib.pyplot as plt
-import amplitude_extraction as sp #Melanie Balaz' amplitude_extraction script
+import src.classifier.signalProcessing.amplitude_extraction as sp #Melanie Balaz' amplitude_extraction script
 from scipy.io import loadmat
 from scipy.linalg import eigh
 from mne.filter import filter_data
@@ -390,7 +390,8 @@ class FBCSP:
                     image_interp='bilinear', average=None, head_pos=None, time_format='CSP%01d'))
             return plots
 
-class Preproc :
+
+class Preproc:
     
     def __init__(self, bands=None, classes=2, fs=100, windowlength=3.5, source='raw'):
         """

@@ -1,7 +1,7 @@
 from sklearn.svm import LinearSVC
 from sklearn.pipeline import Pipeline
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
-from feature_selector import feature_selector
+from src.classifier.FBCSP.feature_selector import feature_selector
 import pickle
 
 class classifier :

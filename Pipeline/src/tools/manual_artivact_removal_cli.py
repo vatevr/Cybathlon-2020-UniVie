@@ -3,7 +3,7 @@ def artifact_removal(self, csp, info, layout):
     print("Please enter an integer number (starting from 0) for each of the patterns you would like to drop.")
     print("Once you are done, enter a negative integer")
     drops = []
-    while (1):
+    while 1:
         csp.plot_patterns(info, layout=layout)
         print("Please select which features to drop [band/component]: ")
         drop = int(input())

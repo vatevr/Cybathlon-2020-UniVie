@@ -1,7 +1,5 @@
-from time import sleep
-
 from src.connector.udp_connector import UdpConnector
-from src.classifier.classifier import classifier
+from src.classifier.FBCSP.FBCSPclassifier import classifier
 
 
 file = file.open()
