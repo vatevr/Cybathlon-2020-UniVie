@@ -22,8 +22,8 @@ class FileReader():
         imagery_right = data.imagery_right - \
                         data.imagery_right.mean(axis=1, keepdims=True)
 
-        eeg_data_l = np.vstack([imagery_left * 1e-6, data.imagery_event])
-        eeg_data_r = np.vstack([imagery_right * 1e-6,
+        eeg_data_l = np.vstack([imagery_left, data.imagery_event])
+        eeg_data_r = np.vstack([imagery_right,
                                 data.imagery_event * 2])
         eeg_data = np.hstack([eeg_data_l, np.zeros((eeg_data_l.shape[0], 500)),
                               eeg_data_r])

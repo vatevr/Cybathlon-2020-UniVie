@@ -15,7 +15,9 @@ class SlidingWindowMaker:
     def update(self, sample):
         if self.check_full():
             tmpbuf = self.windowBuffer
+            #print(len(self.windowBuffer))
             self.windowBuffer = self.windowBuffer[self.updateFreq:]
+            #print(len(self.windowBuffer))
             self.windowBuffer.append(sample)
             return tmpbuf
         else:
@@ -23,7 +25,7 @@ class SlidingWindowMaker:
             return None
 
     def check_full(self):
-        if len(self.windowBuffer) >= self.windowSize :
+        if len(self.windowBuffer) >= self.windowSize:
             return True
         else:
             return False

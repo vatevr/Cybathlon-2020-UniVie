@@ -15,16 +15,23 @@ class UdpSimulator:
 
         addr = (address, port)
         nchn = 32
+        print(addr)
         data = data[:nchn]
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-        counter = 1
+        counter = 0
         try:
             while True:
-                mysample = data[:nchn, counter:counter + 4].T.ravel().astype('<f4').tobytes('C')
-                #print(data[:nchn, counter:counter + 4].T.ravel())
+                #start = time.time()
+                header = np.asarray(([0, counter, 0, 0, 0, 0, 0])).ravel().astype('>i4').tobytes('C')                           #transforms data to 4 byte integer!
+
+                mysample = header+data[:nchn, counter:counter + 3].T.ravel().astype('>i4').tobytes('C')     #possible loss of data here!
+
                 sock.sendto(mysample, addr)
                 time.sleep(4. / self.fs)
+                counter=counter+1
+                #end = time.time()
+                #print(end-start)
         finally:
             print("done")

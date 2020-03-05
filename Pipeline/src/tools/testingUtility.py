@@ -1,2 +1,2 @@
 def printWindowCallback(window):
-    print(window)
+    print("")
