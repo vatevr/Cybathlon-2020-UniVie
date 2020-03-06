@@ -7,7 +7,7 @@ clf = riemannianClassifier(savePath=clfpath)
 clf.load_self()
 
 #Set LSL
-LSLchannels = 4
+LSLchannels = 2
 LSLinterval = 10
 LSLinfo = StreamInfo('Feedback', 'VIS', LSLchannels, LSLinterval, 'float32', 'myuid34234')
 LSLoutlet = StreamOutlet(LSLinfo)
@@ -25,6 +25,6 @@ def sendToVisTest(window) :
     window = np.asarray([window])
     print(window.shape)
     proba = clf.predict_proba(window)
-    print(proba)
+    print(proba[0])
     LSLoutlet.push_sample(proba[0])
 
