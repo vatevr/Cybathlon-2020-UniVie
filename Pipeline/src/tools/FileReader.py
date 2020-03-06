@@ -1,7 +1,8 @@
 import numpy as np
 import mne
 from scipy import io as sio
-
+from moabb.datasets import BNCI2014001, BNCI2014004, BNCI2015004
+from moabb.paradigms import MotorImagery
 
 class FileReader():
     def __init__(self, datapath):
@@ -48,3 +49,12 @@ class FileReader():
         tmax = tmin + 5  # time in seconds after trigger the trial should end
         epochs = mne.Epochs(raw, events, tmin=tmin, tmax=tmax, preload=True, baseline=None, picks=picks)
         return epochs, raw
+
+    def load_moabb(self):
+
+        MI = MotorImagery(fmin=8, fmax=32)
+        datasets = [BNCI2014004(), BNCI2014001(), BNCI2015004()]
+        dataset_names = ["BNCI2014004", "BNCI2014001", "BNCI2015004"]
+
+        X, y, meta = MI.get_data(datasets[1], [1])
+        return X, y, meta

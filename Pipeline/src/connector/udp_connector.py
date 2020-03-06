@@ -49,15 +49,15 @@ class UdpConnector:
 
     def process_window(self, data_queue, trigger_queue):
         windowmaker = SlidingWindowMaker(windowSize=self.windowlength, fs=self.fs, updateFreq=400)
-        start = time()
+        #start = time()
         while True:
             window = windowmaker.update(data_queue.get(block=True))
             if window is not None:
-                print(np.asarray(window).shape)
+                #print(np.asarray(window).shape)
                 self.on_batch_received(np.asarray(window).T)
-                end=time()
-                print(end-start)
-                start=time()
+                #end=time()
+                #print(end-start)
+                #start=time()
         """
         cnt=0
         window = np.zeros([self.windowlength * self.fs, self.n_chn - 1])
