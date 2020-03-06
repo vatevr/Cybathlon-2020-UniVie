@@ -1,5 +1,6 @@
-from Pipeline.src.classifier.riemannianClassifier.classifier import riemannianClassifier
 import numpy as np
+
+from src.classifier.riemannianClassifier.classifier import riemannianClassifier
 
 clfpath = "../savedFilters/test"
 clf = riemannianClassifier(savePath=clfpath)

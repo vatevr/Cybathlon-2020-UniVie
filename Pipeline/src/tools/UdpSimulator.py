@@ -1,8 +1,11 @@
-from Pipeline.src.tools.FileReader import FileReader
+
 import socket
-import sys
 import time
+
 import numpy as np
+
+from src.tools.FileReader import FileReader
+
 
 class UdpSimulator:
     def __init__(self, samples_per_block=4, fs=500):

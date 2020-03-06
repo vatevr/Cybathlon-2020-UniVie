@@ -1,4 +1,4 @@
-DBPORT=5
+DBPORT=5432
 
 migrate:
 	@echo $(PYTHONPATH)

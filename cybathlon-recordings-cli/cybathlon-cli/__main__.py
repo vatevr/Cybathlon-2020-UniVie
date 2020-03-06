@@ -85,6 +85,7 @@ class RecordingsApi:
         file = open(filepath, 'rb')
 
         files = {'file': file}
+
         response = requests.post(self._base + '/record', files=files)
 
         print(f'uploading a recording status code {response.status_code}')

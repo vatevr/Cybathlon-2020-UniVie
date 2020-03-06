@@ -60,6 +60,7 @@ def receive(sock, data_queue, trigger_queue):
             # connection.close
             # pass
 
+
 def process_window(data_queue, trigger_queue):
     cnt = 0
     window = np.zeros([windowlength * fs, n_chn-1])
@@ -75,7 +76,6 @@ def process_window(data_queue, trigger_queue):
         stop = time()
         print(stop - start)
         cnt = 0
-
 
 
 def do_stuff(window) :

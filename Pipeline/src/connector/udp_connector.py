@@ -1,10 +1,10 @@
 import socket
-
 from queue import Queue
 from threading import Thread
-from time import sleep, time
+
 import numpy as np
-from Pipeline.src.connector.SlidingWindowMaker import SlidingWindowMaker
+
+from src.connector.SlidingWindowMaker import SlidingWindowMaker
 
 
 class UdpConnector:
