@@ -5,7 +5,11 @@ from random import randrange
 from pylsl import StreamInlet, resolve_stream
 import datetime
 
+UPDATE_INTERVAL = 100  # UPDATING INTERVAL (ms)
+STREAM_TYPE = 'VIS'  # STREAM TYPE
 
+MIN_VALUE = 0
+MAX_VALUE = 100
 
 class Window(QtWidgets.QMainWindow):
 
@@ -18,7 +22,7 @@ class Window(QtWidgets.QMainWindow):
         self.initGeo()
 
         self.timerSignalOV = QtCore.QTimer()
-        self.timerSignalOV.setInterval(100) # HERE YOU SET THE UPDATING INTERVAL (ms)
+        self.timerSignalOV.setInterval(UPDATE_INTERVAL)
         self.timerSignalOV.timeout.connect(self.updateSignal)
 
         self.timerTime = QtCore.QTimer()
@@ -28,10 +32,10 @@ class Window(QtWidgets.QMainWindow):
         self.currentTimer = self.timerSignalOV
 
         QtWidgets.QMessageBox.information(self, 'Vis Info',
-                                          "<strong style='font-size: 15px;'>Start your OpenViBE scenario...</strong>")
+                                          "<strong style='font-size: 15px;'>Start your scenario...</strong>")
         print("looking for an EEG stream...")
 
-        self.streams = resolve_stream('type', 'SIG') # STREAM TYPE (must match the type from "LSL Export (Gipsa)" box in OV)
+        self.streams = resolve_stream('type', STREAM_TYPE) # STREAM TYPE (must match the type from "LSL Export (Gipsa)" box in OV)
         # create a new inlet to read from the stream
         self.inlet = StreamInlet(self.streams[0])
 
@@ -67,8 +71,8 @@ class Window(QtWidgets.QMainWindow):
         self.progressLeft.setInvertedAppearance(True)
         self.progressLeft.setStyleSheet("QProgressBar::chunk { background-color: red; }")
         self.progressLeft.setOrientation(QtCore.Qt.Horizontal)
-        self.progressLeft.setMinimum(0)
-        self.progressLeft.setMaximum(100)
+        self.progressLeft.setMinimum(MIN_VALUE)
+        self.progressLeft.setMaximum(MAX_VALUE)
         self.progressLeft.setValue(40)
         self.progressLeft.setTextVisible(False)
 
@@ -76,8 +80,8 @@ class Window(QtWidgets.QMainWindow):
         self.progressLight.setGeometry(360, 50, 80, 300)
         self.progressLight.setStyleSheet("QProgressBar::chunk { background-color: red; }")
         self.progressLight.setOrientation(QtCore.Qt.Vertical)
-        self.progressLight.setMinimum(0)
-        self.progressLight.setMaximum(100)
+        self.progressLight.setMinimum(MIN_VALUE)
+        self.progressLight.setMaximum(MAX_VALUE)
         self.progressLight.setValue(40)
         self.progressLight.setTextVisible(False)
 
@@ -86,8 +90,8 @@ class Window(QtWidgets.QMainWindow):
         self.progressRest.setStyleSheet("QProgressBar::chunk { background-color: red; }")
         self.progressRest.setOrientation(QtCore.Qt.Vertical)
         self.progressRest.setInvertedAppearance(True)
-        self.progressRest.setMinimum(0)
-        self.progressRest.setMaximum(100)
+        self.progressRest.setMinimum(MIN_VALUE)
+        self.progressRest.setMaximum(MAX_VALUE)
         self.progressRest.setValue(40)
         self.progressRest.setTextVisible(False)
 
@@ -97,8 +101,8 @@ class Window(QtWidgets.QMainWindow):
         self.progressRight.setStyleSheet("QProgressBar::chunk { background-color: red; }")
         # border-top-right-radius: 5px; border-bottom-right-radius: 5px;
         self.progressRight.setOrientation(QtCore.Qt.Horizontal)
-        self.progressRight.setMinimum(0)
-        self.progressRight.setMaximum(100)
+        self.progressRight.setMinimum(MIN_VALUE)
+        self.progressRight.setMaximum(MAX_VALUE)
         self.progressRight.setValue(40)
         self.progressRight.setTextVisible(False)
 
@@ -183,7 +187,7 @@ class Window(QtWidgets.QMainWindow):
     def updateSignal(self):
         sample, timestamp = self.inlet.pull_sample()
         print(self.inlet.pull_sample())
-        sample = [ int((x + 3) / 6 * 100) for x in sample]
+        sample = [ (x * 100) for x in sample]
         # print(sample, val)
         self.progressLeft.setStyleSheet(self.progressColor(sample[0]))
         self.progressLeft.setValue(sample[0])
