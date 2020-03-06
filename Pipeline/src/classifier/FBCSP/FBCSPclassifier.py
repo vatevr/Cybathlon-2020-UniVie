@@ -1,7 +1,7 @@
 from sklearn.svm import LinearSVC
 from sklearn.pipeline import Pipeline
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
-from feature_selector import feature_selector
+from src.classifier.FBCSP.feature_selector import feature_selector
 import pickle
 
 class classifier :
@@ -73,7 +73,7 @@ class classifier :
         self.fit(raw_centered_epoched, raw_bpfiltered_epoched, y)        
         
     
-    def fit (self, epoched, X, y) :
+    def fit (self, epoched, X, y, info=None, layout=None) :
         """
         :param X : numpy array of Shape: bands * epochs* channels * samples
         """
@@ -89,8 +89,11 @@ class classifier :
             clf = LinearSVC()
         else :
             print('TODO')
-        
-    
+
+        if info != None:
+            if layout != None:
+                from tools.manual_artifact_removal_cli.py import artifact_removal
+                drops = artifact_removal(fbcsp, info, layout)
         
         #fit the fbcsp filters
         fil = fbcsp.fit_transform(X, y)
@@ -142,3 +145,6 @@ class classifier :
             
         score = clf.score(filtered, y)
         return score
+
+    def predict(self, X):
+        return self.classifier_.predict(X)

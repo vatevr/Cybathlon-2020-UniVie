@@ -75,13 +75,12 @@ class classifier :
         self.fit(raw_centered_epoched, raw_bpfiltered_epoched, y)        
         
     
-    def fit (self, epoched, X, y) :
+    def fit (self, epoched, X, y, info=None, layout=None) :
         """
         :param X : numpy array of Shape: bands * epochs* channels * samples
         """
         
         fbcsp = FBCSP(filter_target='epoched', method='avg_power', bands=self.bands, components=self.components)
-        sf = feature_selector(method=self.selector, features=self.featurebands)
         
         
         #select classifier to use
@@ -96,8 +95,16 @@ class classifier :
         
         #fit the fbcsp filters
         fil = fbcsp.fit_transform(X, y)
-        
+        #import pdb
+        #pdb.set_trace()
+        if info != None:
+            if layout != None :
+                drops = self.artifact_removal(fbcsp, info, layout)
+            else :
+                drops = self.artifact_removal(fbcsp, info)
+                
         #run the filters through feature selection and build new filters.
+        sf = feature_selector(method=self.selector, features=self.featurebands, drops=drops)
         sf.fit(fil, y)
         new_filt = sf.transform_filter(fbcsp.filters_)
         
@@ -144,3 +151,18 @@ class classifier :
             
         score = clf.score(filtered, y)
         return score
+    
+    def artifact_removal(self, csp, info, layout) :
+        print("This CLI will help you remove features that look like artifacts.")
+        print("Please enter an integer number (starting from 0) for each of the patterns you would like to drop.")
+        print("Once you are done, enter a negative integer")
+        drops=[]
+        while(1) :
+            csp.plot_patterns(info, layout=layout)
+            print("Please select which features to drop [band/component]: ")
+            drop = int(input())
+            if drop < 0 :
+                return drops
+            else :
+                drops.append(drop)
+                

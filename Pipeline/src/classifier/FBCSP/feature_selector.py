@@ -7,7 +7,6 @@ class feature_selector :
     
     def __init__(self, features=6, method='linear'):
         """
-        :param components : int. number of CSP components the filter will contain
         :attribute filters_ : numpy array. CSP filter.  Shape: channels * samples
         """
         
@@ -30,18 +29,6 @@ class feature_selector :
         band_ind = band_ind[:self.features] #pick the best n features
         self.bands_ = band_ind
         print('feature selection scores: ' + str(self.scores_))
-        
-    """    
-    def transform(self, X_csp) :
-        
-        filtered = np.zeros(( X_csp.shape[2], X_csp.shape[1]*self.features))
-        band_ind = self.bands_
-        
-        for feature in range(self.features) :
-            for component in range(X_csp.shape[1]) :
-                picks[(feature*X_csp.shape[1])+component, :] = X_csp[band_ind[feature], component, :]
-        return picks
-    """
     
     def transform_filter(self, csp_filter) :
         """
@@ -51,10 +38,20 @@ class feature_selector :
         #pdb.set_trace()
         picks = np.zeros((csp_filter.shape[1]*self.features, csp_filter.shape[2]))
         band_ind = self.bands_
-        
-        for feature in range(self.features) :
-            for component in range(csp_filter.shape[1]) :
-                picks[(feature*csp_filter.shape[1])+component, :] = csp_filter[band_ind[feature], component, :]
+        i = 0
+        for feature in range(self.features):
+            for component in range(csp_filter.shape[1]):
+                should_drop = False
+                for drop in self.drops:
+                    band = drop//10      # using floor division to avoid having to import the math library
+                    comp = drop % 10
+                    if feature == band and component == comp:
+                        should_drop = True
+                if should_drop == True:
+                    continue
+                else:
+                    picks[i, :] = csp_filter[band_ind[feature], component, :]
+                    i += 1
         return picks
     
     """
