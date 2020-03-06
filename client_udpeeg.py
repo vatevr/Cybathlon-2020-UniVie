@@ -1,5 +1,6 @@
 import socket
 import numpy as np
+import time
 
 from queue import Queue
 from threading import Thread
@@ -7,6 +8,7 @@ from time import sleep, time
 from signalprocessing.peakfrequency.peak_frequency import PeakFrequency
 from signalprocessing import signal_tools
 from riemannianClassifier.classifier import riemannianClassifier
+from pylsl import StreamInfo, StreamOutlet
 
 # load .env file
 from os import getenv
@@ -20,8 +22,13 @@ fs = int(getenv('FS'))                    # sampling frequency of NeurOne
 peak_frequency_o = PeakFrequency(channels=n_chn - 1, samples=(windowlength * fs), fs=fs)
 clf = riemannianClassifier()
 clf.load_self() #assuming that we have a pre-trained classifier
-    
 
+#Set LSL
+LSLchannels = 4
+LSLinterval = 10
+LSLinfo = StreamInfo('Feedback', 'VIS', LSLchannels, LSLinterval, 'float32', 'myuid34234')
+LSLoutlet = StreamOutlet(LSLinfo)
+    
 
 def receive(sock, data_queue, trigger_queue):
 
@@ -78,20 +85,22 @@ def process_window(data_queue, trigger_queue):
 
 
 
-def do_stuff(window) :
-
+def do_stuff(window):
     # signal processing
     peak_frequency_result = peak_frequency_o.transform(x=window)
     welch = signal_tools.extract_amplitudes_welch(window, (windowlength * fs))
 
     print('{} {}'.format(peak_frequency_result.shape, welch.shape))
 
-    binary_probabilities = clf.predict_proba(window) #compute class probabilities for binary classification
+    binary_probabilities = clf.predict_proba(window)  # compute class probabilities for binary classification
 
     # TO-DO pass probabilities to feedback/UI
     # ...
 
-    return 
+    # push to visualization
+    LSLoutlet.push_sample(binary_probabilities)
+
+    return
 
 def convert_bytes(data, cnt):
     np_samples = np.zeros([n_sample_per_block, n_chn])
@@ -115,6 +124,7 @@ if __name__ == '__main__':
     # tcp_server_address = (TCP_IP, TCP_PORT)
     # sock_tcp.bind(tcp_server_address)
     # sock_tcp.listen(1)
+	
 
     packet_len = 28
 
