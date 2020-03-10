@@ -8,6 +8,13 @@ class FileReader():
     def __init__(self, datapath):
         self.datapath = datapath
 
+    def center_data(self, raw_data):
+        # center data. remove mean from each channel.
+        raw_data = np.array([(raw_data[channel] - np.mean(raw_data[channel])) for channel in range(raw_data.shape[0])])
+        print("Centering complete. Centered data shape: " + str(raw_data.shape))
+        self.centered_data_ = raw_data
+        return self.centered_data_
+
     def load_mat(self):
         fs = 512
 
@@ -59,7 +66,7 @@ class FileReader():
         X, y, meta = MI.get_data(datasets[1], [1])
         return X, y, meta
 
-    def load_brainvision(self):
+    def load_brainvision(self, classes=2):
         raw = mne.io.read_raw_brainvision(self.datapath, preload=True)
         # Set montage (location of channels)
         raw.rename_channels({'O9': 'I1', 'O10': 'I2'})
@@ -79,13 +86,17 @@ class FileReader():
         tmax = tmin + 4  # time in seconds after trigger the trial should end
         epochs = mne.Epochs(raw, events, tmin=tmin, tmax=tmax, preload=True, baseline=None, picks=picks)
 
-        labels = epochs.events[:, -1] #1, 2, 5, 10
+        classlist = [1, 2, 6, 11]  # or 5 or 11 for 4-class
+
+        classlist = classlist[:classes]
+
+        labels = epochs.events[:, -1]  # 1, 2, 6, 10
         epochs = epochs.copy().crop(tmin=1., tmax=2.)
         X = []
-        X = np.asarray([epochs.get_data()[epoch, :, :] for epoch in range(len(labels)) if (labels[epoch] == 1 or labels[epoch] == 2)])  # or 5 or 11 for 4-class
+        X = np.asarray([epochs.get_data()[epoch, :, :] for epoch in range(len(labels)) if (labels[epoch] in classlist)])
 
         y = []
-        y = np.asarray([labels[epoch] for epoch in range(len(labels)) if (labels[epoch] == 1 or labels[epoch] == 2)])
+        y = np.asarray([labels[epoch] for epoch in range(len(labels)) if (labels[epoch] in classlist)])
 
 
         return X, y

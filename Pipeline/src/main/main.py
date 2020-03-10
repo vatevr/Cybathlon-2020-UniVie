@@ -9,10 +9,11 @@ from threading import Thread
 
 def offline_training(datapath, savepath) :
     reader = FileReader(datapath=datapath)
-    X, y = reader.load_brainvision()
+    X, y = reader.load_brainvision(classes=2)
 
     clf = riemannianClassifier(savePath=savepath)
-
+    import pdb
+    pdb.set_trace()
     clf.fit(X, y)
 
 
